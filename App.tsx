@@ -5,41 +5,55 @@
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import { StatusBar, StyleSheet, useColorScheme, View, Text, TouchableOpacity } from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+import { useEffect, useState } from 'react';
+import { initDb } from './src/db/client';
+import { notificationService } from './src/services/NotificationService';
+import { useHabitStore } from './src/store/habitStore';
+
+import { RootNavigator } from './src/navigation/RootNavigator';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        await initDb();
+        await useHabitStore.getState().initialize();
+        await notificationService.requestPermissions();
+        await notificationService.createDefaultChannel();
+        setIsReady(true);
+      } catch (error) {
+        console.error('Initialization failed:', error);
+      }
+    };
+    initialize();
+  }, []);
+
+  if (!isReady) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Loading infrastructure...</Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+        <RootNavigator />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;
