@@ -291,37 +291,67 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
   );
 
   return (
-    <Modal visible={isVisible} animationType="slide" transparent={true}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.overlay}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContent}>
+    <Modal
+      visible={isVisible}
+      animationType="slide"
+      transparent={true}
+      statusBarTranslucent
+      onRequestClose={onClose}
+    >
+      <View style={styles.overlay}>
+        {/* Backdrop for click-to-close */}
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={() => {
+            Keyboard.dismiss();
+            onClose();
+          }}
+        />
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboardView}
+        >
+          <View style={styles.modalContent}>
+            {/* Grab Handle for aesthetic feel */}
+            <View style={styles.grabHandle} />
+
             <View style={styles.header}>
               <View style={styles.headerLeft}>
                 <Text style={styles.title}>{isEdit ? 'Edit Habit' : 'New Habit'}</Text>
                 <StepIndicator currentStep={step - 1} totalSteps={3} />
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                <Icon name="close" size={22} color={Colors.textSecondary} />
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.8}>
+                <Icon name="close" size={20} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-              {step === 1 && renderStep1()}
-              {step === 2 && (
-                <CreateHabitStep2
-                  baseline={baseline}
-                  setBaseline={setBaseline}
-                  unit={unit}
-                  setUnit={setUnit}
-                  goal={goal}
-                  setGoal={setGoal}
-                  frequency={freq}
-                  setFrequency={setFreq}
-                  identity={identity}
-                  setIdentity={setIdentity}
-                />
-              )}
-              {step === 3 && renderStep3()}
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollContent}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View>
+                  {step === 1 && renderStep1()}
+                  {step === 2 && (
+                    <CreateHabitStep2
+                      baseline={baseline}
+                      setBaseline={setBaseline}
+                      unit={unit}
+                      setUnit={setUnit}
+                      goal={goal}
+                      setGoal={setGoal}
+                      frequency={freq}
+                      setFrequency={setFreq}
+                      identity={identity}
+                      setIdentity={setIdentity}
+                    />
+                  )}
+                  {step === 3 && renderStep3()}
+                </View>
+              </TouchableWithoutFeedback>
             </ScrollView>
 
             <View style={styles.footer}>
@@ -338,41 +368,74 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
                 type="primary"
                 onPress={handleNext}
                 style={styles.footerBtn}
+                disabled={(step === 1 && !name) || (step === 2 && (!unit || !baseline))}
               />
             </View>
-          </KeyboardAvoidingView>
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: { 
-    flex: 1, 
-    backgroundColor: 'rgba(28, 43, 74, 0.4)', 
-    justifyContent: 'flex-end' 
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(26, 28, 30, 0.4)', // Slightly darker, premium overlay
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  keyboardView: {
+    width: '100%',
   },
   modalContent: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     padding: Spacing.l,
-    maxHeight: '92%',
-    ...Shadows.elevated,
+    maxHeight: '94%',
+    ...Platform.select({
+      ios: {
+        shadowColor: Colors.textPrimary,
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.08,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 20,
+      },
+    }),
   },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'flex-start', 
-    marginBottom: Spacing.m 
+  grabHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: Colors.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: Spacing.m,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+    marginTop: Spacing.s,
   },
   headerLeft: {
-    gap: 8,
+    flex: 1,
   },
-  title: { 
-    ...Typography.title,
-    color: Colors.textPrimary 
+  title: {
+    ...Typography.title, // Fixed: use Spread after Typography.title if it exists
+    color: Colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 4,
   },
   closeBtn: {
     width: 36,
@@ -382,20 +445,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  indicatorContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
+  indicatorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    width: 120,
+    width: 140,
+    marginTop: 4,
   },
-  indicatorDot: { 
-    width: 8, 
-    height: 8, 
-    borderRadius: 4, 
+  indicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.border,
   },
-  indicatorDotActive: { 
-    width: 24,
+  indicatorDotActive: {
+    width: 28,
     backgroundColor: Colors.brand,
   },
   indicatorDotCompleted: {
@@ -403,120 +467,136 @@ const styles = StyleSheet.create({
   },
   indicatorLine: {
     flex: 1,
-    height: 2,
+    height: 3,
     backgroundColor: Colors.border,
-    borderRadius: 1,
+    borderRadius: 1.5,
   },
   indicatorLineActive: {
     backgroundColor: Colors.brand,
   },
-  scrollContent: { 
-    paddingBottom: Spacing.xl 
+  scrollContent: {
+    paddingBottom: Spacing.xl,
   },
   stepContent: {
-    gap: Spacing.l,
+    gap: Spacing.xl,
   },
-  sectionTitle: { 
+  sectionTitle: {
     ...Typography.heading,
+    fontSize: 18,
     color: Colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: -Spacing.s,
   },
   inputGroup: {
-    gap: Spacing.s,
+    gap: Spacing.m,
   },
-  label: { 
+  label: {
     ...Typography.label,
-    color: Colors.textSecondary,
+    color: Colors.textPrimary,
     fontWeight: '700',
+    fontSize: 15,
   },
   input: {
     backgroundColor: Colors.background,
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: Spacing.l,
     paddingVertical: Spacing.m,
     ...Typography.body,
+    fontSize: 16,
     color: Colors.textPrimary,
-    minHeight: 56,
-    borderWidth: 1.5,
+    minHeight: 58,
+    borderWidth: 2,
     borderColor: 'transparent',
   },
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.background,
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: Spacing.l,
     gap: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   inlineInput: {
     flex: 1,
     paddingVertical: Spacing.m,
     ...Typography.body,
+    fontSize: 16,
     color: Colors.textPrimary,
   },
-  chipRow: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    gap: Spacing.s,
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.m,
   },
-  chip: { 
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10, 
-    paddingHorizontal: 16, 
-    borderRadius: 20, 
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 24,
     backgroundColor: Colors.surface,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: Colors.border,
   },
-  chipActive: { 
-    backgroundColor: Colors.brandLight, 
+  chipActive: {
+    backgroundColor: Colors.brandLight,
     borderColor: Colors.brand,
   },
-  chipText: { 
+  chipText: {
     ...Typography.label,
-    color: Colors.textSecondary, 
-    fontWeight: '600' 
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontWeight: '600',
   },
-  chipTextActive: { 
+  chipTextActive: {
     color: Colors.brand,
     fontWeight: '700',
   },
-  footer: { 
-    flexDirection: 'row', 
-    paddingVertical: Spacing.l,
+  footer: {
+    flexDirection: 'row',
+    paddingTop: Spacing.l,
+    paddingBottom: Platform.OS === 'ios' ? Spacing.xl : Spacing.l,
     backgroundColor: Colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: Colors.borderLight,
+    marginTop: Spacing.s,
   },
-  footerBtn: { 
-    flex: 1 
+  footerBtn: {
+    flex: 1,
+    height: 56,
   },
   backBtn: {
     marginRight: Spacing.m,
   },
-  daysRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+  daysRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
   },
-  dayCircle: { 
-    width: 38, 
-    height: 38, 
-    borderRadius: 19, 
-    backgroundColor: Colors.background, 
-    alignItems: 'center', 
+  dayCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  dayCircleActive: { 
+  dayCircleActive: {
     backgroundColor: Colors.brand,
     borderColor: Colors.brand,
   },
-  dayText: { 
+  dayText: {
     ...Typography.label,
-    color: Colors.textSecondary, 
-    fontWeight: '600' 
+    color: Colors.textSecondary,
+    fontWeight: '700',
   },
-  dayTextActive: { 
-    color: Colors.surface 
+  dayTextActive: {
+    color: Colors.surface,
   },
 });
+

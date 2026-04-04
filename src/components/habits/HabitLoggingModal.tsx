@@ -221,7 +221,7 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
             style={[styles.confirmBtnInner, { shadowColor: Colors.brand }]}
           >
             <Icon name="check-bold" size={20} color={Colors.surface} />
-            <Text style={styles.confirmBtnText}>LOG & CONSOLIDATE</Text>
+            <Text style={styles.confirmBtnText}>SECURE PROGRESS</Text>
           </TouchableOpacity>
         </Animated.View>
       </BottomSheetScrollView>

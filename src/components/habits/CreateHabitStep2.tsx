@@ -54,7 +54,7 @@ export const CreateHabitStep2 = ({
             placeholderTextColor={Colors.textTertiary}
           />
           <TextInput
-            style={[styles.input, styles.flex1, styles.mlSpacing]}
+            style={[styles.input, styles.flex1]}
             value={unit}
             onChangeText={setUnit}
             placeholder="Pages"
@@ -117,54 +117,59 @@ export const CreateHabitStep2 = ({
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.l,
+    gap: Spacing.xl,
   },
   sectionTitle: { 
     ...Typography.heading,
+    fontSize: 18,
     color: Colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: -Spacing.s,
   },
   inputGroup: {
-    gap: Spacing.s,
+    gap: Spacing.m,
   },
   label: { 
     ...Typography.label,
-    color: Colors.textSecondary,
+    color: Colors.textPrimary,
     fontWeight: '700',
+    fontSize: 15,
   },
   fieldRow: { 
     flexDirection: 'row', 
-    justifyContent: 'space-between' 
+    gap: Spacing.m,
   },
   flex1: { 
     flex: 1 
   },
-  mlSpacing: { 
-    marginLeft: Spacing.m 
-  },
   input: {
     backgroundColor: Colors.background,
-    borderRadius: 16,
+    borderRadius: 18,
     paddingHorizontal: Spacing.l,
     paddingVertical: Spacing.m,
     ...Typography.body,
+    fontSize: 16,
     color: Colors.textPrimary,
-    minHeight: 56,
+    minHeight: 58,
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
   multilineInput: {
-    minHeight: 80,
+    minHeight: 100,
     textAlignVertical: 'top',
+    paddingTop: Spacing.m,
   },
   chipRow: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    gap: Spacing.s,
+    gap: Spacing.m,
   },
   chip: { 
-    paddingVertical: 10, 
-    paddingHorizontal: 16, 
-    borderRadius: 20, 
+    paddingVertical: 12, 
+    paddingHorizontal: 18, 
+    borderRadius: 24, 
     backgroundColor: Colors.surface,
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: Colors.border,
   },
   chipActive: { 
@@ -173,6 +178,7 @@ const styles = StyleSheet.create({
   },
   chipText: { 
     ...Typography.label,
+    fontSize: 14,
     color: Colors.textSecondary, 
     fontWeight: '600' 
   },
@@ -181,3 +187,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

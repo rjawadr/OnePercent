@@ -164,10 +164,10 @@ export const TodayScreen = () => {
       )}
       {habits.length > 0 && !allCompletedOnActiveDate && (
         <View style={styles.sectionHeader}>
-           <View style={styles.sectionTitleBlock}>
-              <Text style={styles.sectionLabel}>Daily Missions</Text>
+            <View style={styles.sectionTitleBlock}>
+              <Text style={styles.sectionLabel}>Daily Disciplines</Text>
               <View style={styles.missionPulse} />
-           </View>
+            </View>
            <Text style={styles.sectionSublabel}>{habits.length - completedTodayCount} PENDING ACTION</Text>
         </View>
       )}

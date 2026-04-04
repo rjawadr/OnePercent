@@ -143,7 +143,7 @@ export function HabitCard({
               <View style={styles.actionIconBox}>
                  <Icon name="plus" size={20} color={Colors.brandDark} />
               </View>
-              <Text style={styles.actionLabel}>LOG</Text>
+              <Text style={styles.actionLabel}>TRACK</Text>
             </TouchableOpacity>
           )}
         </View>

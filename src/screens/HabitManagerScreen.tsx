@@ -8,8 +8,12 @@ import {
   Alert, 
   Animated, 
   Dimensions,
-  Pressable
+  Pressable,
+  Modal
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { BlurView } from '@react-native-community/blur';
 import { useShallow } from 'zustand/react/shallow';
 import { Layout } from '../components/ui/Layout';
 import { useHabitStore } from '../store/habitStore';
@@ -34,6 +38,15 @@ const { width } = Dimensions.get('window');
 export const HabitManagerScreen = () => {
   const [viewMode, setViewMode] = useState<'active' | 'archived'>('active');
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+  
+  // Conditionally handle tab bar height (may throw if not in tab nav)
+  let tabBarHeight = 0;
+  try {
+    tabBarHeight = useBottomTabBarHeight();
+  } catch (e) {
+    // Not in a tab navigator
+  }
   
   const habits = useHabitStore(
     useShallow((state) => state.habits.filter(h => 
@@ -46,6 +59,36 @@ export const HabitManagerScreen = () => {
   const deleteHabit = useHabitStore((state) => state.deleteHabit);
   
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'archive' | 'delete' | 'restore';
+    habit: Habit;
+  } | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const confirmAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (confirmAction) {
+      setShowToast(true);
+      Animated.spring(confirmAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 60,
+        friction: 10,
+      }).start();
+    }
+  }, [confirmAction]);
+
+  const dismissToast = () => {
+    Animated.spring(confirmAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 60,
+      friction: 12,
+    }).start(() => {
+      setShowToast(false);
+      setConfirmAction(null);
+    });
+  };
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -58,31 +101,29 @@ export const HabitManagerScreen = () => {
 
   const handleToggleArchive = (habit: Habit) => {
     const isArchived = habit.status === 'archived';
-    Alert.alert(
-      isArchived ? 'Restore Habit' : 'Archive Habit',
-      isArchived 
-        ? `Restore "${habit.name}" to your active list?` 
-        : `Archive "${habit.name}"? It will be hidden from the daily view.`,
-      [
-        { text: 'Later', style: 'cancel' },
-        { 
-          text: isArchived ? 'Restore' : 'Archive', 
-          style: isArchived ? 'default' : 'destructive',
-          onPress: () => archiveHabit(habit.id, !isArchived)
-        },
-      ]
-    );
+    setConfirmAction({
+      type: isArchived ? 'restore' : 'archive',
+      habit
+    });
   };
 
   const handleDelete = (habit: Habit) => {
-    Alert.alert(
-      'Permanent Erasure',
-      `Delete "${habit.name}" permanently? This will erase all history and streaks. This action is irreversible.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete Everywhere', style: 'destructive', onPress: () => deleteHabit(habit.id) },
-      ]
-    );
+    setConfirmAction({
+      type: 'delete',
+      habit
+    });
+  };
+
+  const runConfirmAction = () => {
+    if (!confirmAction) return;
+    const { type, habit } = confirmAction;
+    
+    if (type === 'delete') {
+      deleteHabit(habit.id);
+    } else {
+      archiveHabit(habit.id, type === 'archive');
+    }
+    dismissToast();
   };
 
   const renderRightActions = (habit: Habit, progress: Animated.AnimatedInterpolation<number>) => {
@@ -249,6 +290,86 @@ export const HabitManagerScreen = () => {
         initialHabit={editingHabit || undefined}
         onUpdate={(id, updates) => updateHabit(id, updates)}
       />
+
+      <Modal
+        visible={showToast}
+        transparent
+        animationType="none"
+        onRequestClose={dismissToast}
+      >
+        {confirmAction && (
+          <View style={styles.modalOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={dismissToast} />
+            <Animated.View 
+              style={[
+                styles.toastContainer,
+                {
+                  bottom: 40 + tabBarHeight + insets.bottom,
+                  opacity: confirmAnim,
+                  transform: [{
+                    translateY: confirmAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [100, 0]
+                    })
+                  }]
+                }
+              ]}
+            >
+              <BlurView 
+                style={styles.toastBlur} 
+                blurType="light" 
+                blurAmount={15} 
+                overlayColor="rgba(255, 255, 255, 0.7)"
+              />
+              <View style={styles.toastContent}>
+                <View style={styles.toastHeader}>
+                  <View style={[
+                    styles.toastIcon, 
+                    { backgroundColor: confirmAction.type === 'delete' ? Colors.amberLight : Colors.brandLight }
+                  ]}>
+                    <Icon 
+                      name={confirmAction.type === 'delete' ? 'trash-can-outline' : 'archive-outline'} 
+                      size={20} 
+                      color={confirmAction.type === 'delete' ? Colors.amber : Colors.brand} 
+                    />
+                  </View>
+                  <View style={styles.toastTextContainer}>
+                    <Text style={styles.toastTitle} numberOfLines={1}>
+                      {confirmAction.type === 'delete' ? `Delete "${confirmAction.habit.name}"?` : 
+                       confirmAction.type === 'archive' ? 'Archive this habit?' : 'Restore habit?'}
+                    </Text>
+                    <Text style={styles.toastSubtitle} numberOfLines={1}>
+                      {confirmAction.type === 'delete' ? 'This will erase all progress.' : 
+                       confirmAction.type === 'archive' ? `Hide "${confirmAction.habit.name}" from daily view.` : 
+                       `Move "${confirmAction.habit.name}" back to tracking.`}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.toastActions}>
+                  <TouchableOpacity 
+                    style={styles.toastCancelBtn} 
+                    onPress={dismissToast}
+                  >
+                    <Text style={styles.toastCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[
+                      styles.toastConfirmBtn,
+                      { backgroundColor: confirmAction.type === 'delete' ? Colors.amber : Colors.brand }
+                    ]} 
+                    onPress={runConfirmAction}
+                  >
+                    <Text style={styles.toastConfirmText}>
+                      {confirmAction.type === 'delete' ? 'Delete' : 'Archive'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Animated.View>
+          </View>
+        )}
+      </Modal>
     </Layout>
   );
 };
@@ -502,5 +623,90 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontSize: 15,
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    justifyContent: 'flex-end',
+  },
+  toastContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    height: 84,
+    borderRadius: 24,
+    overflow: 'hidden',
+    ...Shadows.elevated,
+    elevation: 20,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    zIndex: 9999,
+  },
+  toastBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  toastContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+  },
+  toastHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  toastIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  toastTextContainer: {
+    flex: 1,
+  },
+  toastTitle: {
+    ...Typography.heading,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    fontWeight: '800',
+  },
+  toastSubtitle: {
+    ...Typography.body,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  toastActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toastCancelBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  toastCancelText: {
+    ...Typography.body,
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textSecondary,
+  },
+  toastConfirmBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    ...Shadows.soft,
+  },
+  toastConfirmText: {
+    ...Typography.body,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 });
