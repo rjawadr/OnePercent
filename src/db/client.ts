@@ -94,6 +94,7 @@ export const initDb = async () => {
       { name: 'habitbar_button', type: 'TEXT NOT NULL DEFAULT "mark_done"' },
       { name: 'start_date', type: 'TEXT DEFAULT (date("now"))' },
       { name: 'end_date', type: 'TEXT' },
+      { name: 'status', type: 'TEXT NOT NULL DEFAULT "active"' },
     ];
 
     for (const column of columnsToAdd) {

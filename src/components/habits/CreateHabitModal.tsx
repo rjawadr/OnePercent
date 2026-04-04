@@ -22,7 +22,9 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 interface CreateHabitModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onAdd: (habit: Habit) => void;
+  onAdd?: (habit: Habit) => void;
+  onUpdate?: (id: string, updates: Partial<Habit>) => void;
+  initialHabit?: Habit;
 }
 
 type HabitType = 'quantity' | 'time' | 'check';
@@ -56,8 +58,9 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
   );
 }
 
-export const CreateHabitModal = ({ isVisible, onClose, onAdd }: CreateHabitModalProps) => {
+export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialHabit }: CreateHabitModalProps) => {
   const [step, setStep] = useState(1);
+  const isEdit = !!initialHabit;
 
   // Step 1 State
   const [name, setName] = useState('');
@@ -76,6 +79,25 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd }: CreateHabitModal
   const [anchorHabit, setAnchorHabit] = useState('');
   const [temptationBundle, setTemptationBundle] = useState('');
   const [activeDays, setActiveDays] = useState('1111111');
+
+  React.useEffect(() => {
+    if (initialHabit && isVisible) {
+      setName(initialHabit.name);
+      setCategory(initialHabit.category || 'Personal');
+      setUnitType(initialHabit.unit_type || 'quantity');
+      setBaseline(initialHabit.baseline_value.toString());
+      setUnit(initialHabit.unit);
+      setGoal(initialHabit.target_value?.toString() || '');
+      setFreq(initialHabit.improvement_frequency as any);
+      setIdentity(initialHabit.identity_statement || '');
+      setNotificationTime(initialHabit.notification_time || '08:00');
+      setAnchorHabit(initialHabit.anchor_habit || '');
+      setTemptationBundle(initialHabit.temptation_bundle || '');
+      setActiveDays(initialHabit.active_days || '1111111');
+    } else if (!isVisible) {
+      reset();
+    }
+  }, [initialHabit, isVisible]);
 
   const reset = () => {
     setStep(1);
@@ -112,33 +134,53 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd }: CreateHabitModal
     const numBaseline = parseFloat(baseline);
     const numGoal = goal ? parseFloat(goal) : undefined;
 
-    const newHabit: Habit = {
-      id: Math.random().toString(36).substring(7),
-      name,
-      category,
-      unit,
-      unit_type: unitType,
-      baseline_value: numBaseline,
-      current_target: numBaseline,
-      target_value: numGoal,
-      improvement_frequency: freq as any,
-      frequency: 'daily',
-      identity_statement: identity,
-      anchor_habit: anchorHabit || undefined,
-      temptation_bundle: temptationBundle || undefined,
-      notification_time: notificationTime,
-      active_days: activeDays,
-      sort_order: 0,
-      habitbar_button: unitType === 'check' ? 'mark_done' : (unitType === 'time' ? 'timer' : 'input'),
-      start_date: new Date().toISOString().split('T')[0],
-      is_active: true,
-      created_at: new Date().toISOString(),
-      icon: '✨',
-      color: Colors.brand + '20',
-      streak: 0,
-    };
-
-    onAdd(newHabit);
+    if (isEdit && initialHabit && onUpdate) {
+      const updates: Partial<Habit> = {
+        name,
+        category,
+        unit,
+        unit_type: unitType,
+        baseline_value: numBaseline,
+        target_value: numGoal,
+        improvement_frequency: freq as any,
+        identity_statement: identity,
+        anchor_habit: anchorHabit || undefined,
+        temptation_bundle: temptationBundle || undefined,
+        notification_time: notificationTime,
+        active_days: activeDays,
+        habitbar_button: unitType === 'check' ? 'mark_done' : (unitType === 'time' ? 'timer' : 'input'),
+      };
+      onUpdate(initialHabit.id, updates);
+    } else if (onAdd) {
+      const newHabit: Habit = {
+        id: Math.random().toString(36).substring(7),
+        name,
+        category,
+        unit,
+        unit_type: unitType,
+        baseline_value: numBaseline,
+        current_target: numBaseline,
+        target_value: numGoal,
+        improvement_frequency: freq as any,
+        frequency: 'daily',
+        identity_statement: identity,
+        anchor_habit: anchorHabit || undefined,
+        temptation_bundle: temptationBundle || undefined,
+        notification_time: notificationTime,
+        active_days: activeDays,
+        sort_order: 0,
+        habitbar_button: unitType === 'check' ? 'mark_done' : (unitType === 'time' ? 'timer' : 'input'),
+        start_date: new Date().toISOString().split('T')[0],
+        is_active: true,
+        created_at: new Date().toISOString(),
+        icon: '✨',
+        color: Colors.brand + '20',
+        streak: 0,
+        status: 'active',
+      };
+      onAdd(newHabit);
+    }
+    
     reset();
     onClose();
   };
@@ -255,7 +297,7 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd }: CreateHabitModal
           <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContent}>
             <View style={styles.header}>
               <View style={styles.headerLeft}>
-                <Text style={styles.title}>New Habit</Text>
+                <Text style={styles.title}>{isEdit ? 'Edit Habit' : 'New Habit'}</Text>
                 <StepIndicator currentStep={step - 1} totalSteps={3} />
               </View>
               <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
@@ -292,7 +334,7 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd }: CreateHabitModal
                 />
               )}
               <Button
-                title={step === 3 ? 'Create Habit' : 'Next'}
+                title={step === 3 ? (isEdit ? 'Update Habit' : 'Create Habit') : 'Next'}
                 type="primary"
                 onPress={handleNext}
                 style={styles.footerBtn}

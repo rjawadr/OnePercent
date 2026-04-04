@@ -23,7 +23,7 @@ export const Colors = {
   // Feedback
   success: '#00D1B2',
   warning: '#FFB800',
-  error: '#FF4D4D',
+  error: '#FFB800', // Set to amber to avoid red according to user request
 
   // UI Accents
   amber: '#FFB800',

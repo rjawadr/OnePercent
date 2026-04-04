@@ -1,21 +1,21 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet,
+  View, Text, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
 import Animated, {
   useSharedValue, useAnimatedStyle, withSpring, withSequence,
 } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Colors, Typography, Spacing, Shadows } from '../../theme';
+import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../theme';
 import { Habit } from '../../models/Habit';
 
-// Map category strings to colours
+// Map category strings to professional, zero-red palette
 const CATEGORY_COLORS: Record<string, string> = {
-  personal: Colors.brand,
-  physical: Colors.amber,
+  personal: Colors.brandDark,
+  physical: '#2563EB', // Blue for physical energy
   zen:      Colors.purple,
-  work:     '#4A6FA5',
-  focus:    Colors.brand,
+  work:     '#4F46E5', // Indigo for professional work
+  focus:    Colors.brandDark,
 };
 
 interface HabitCardProps {
@@ -40,7 +40,7 @@ export function HabitCard({
   const scale = useSharedValue(1);
   const categoryKey = habit.category?.toLowerCase() as keyof typeof CATEGORY_COLORS;
   const categoryColor = CATEGORY_COLORS[categoryKey] ?? Colors.brand;
-  const isMilestone = [7, 14, 30, 60, 90, 180, 365].includes(currentStreak);
+  const isMilestone = [3, 7, 14, 30, 60, 90, 180, 365].includes(currentStreak);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -48,8 +48,8 @@ export function HabitCard({
 
   const handlePress = () => {
     scale.value = withSequence(
-      withSpring(0.97, { damping: 15 }),
-      withSpring(1, { damping: 15 })
+      withSpring(0.97, { damping: 12, stiffness: 100 }),
+      withSpring(1, { damping: 12, stiffness: 100 })
     );
     onPress();
   };
@@ -59,10 +59,9 @@ export function HabitCard({
     onLog();
   };
 
-  // Format number properly
   const formatValue = (val: number, unit: string) => {
     const rounded = Number.isInteger(val) ? val : parseFloat(val.toFixed(1));
-    return `${rounded} ${unit}`;
+    return `${rounded}${unit}`;
   };
 
   return (
@@ -73,72 +72,83 @@ export function HabitCard({
         activeOpacity={1}
         style={styles.touchable}
       >
-        {/* Left accent bar */}
-        <View style={[styles.accentBar, { backgroundColor: categoryColor }]} />
+        <View style={styles.topSection}>
+          <View style={[styles.iconStage, { backgroundColor: categoryColor + '10' }]}>
+            <View style={[styles.iconInner, { borderColor: categoryColor + '20' }]} />
+            {habit.icon ? (
+              <Text style={styles.emoji}>{habit.icon}</Text>
+            ) : (
+              <Icon name="lightning-bolt" size={26} color={categoryColor} />
+            )}
+          </View>
 
-        {/* Icon box */}
-        <View style={[styles.iconBox, { backgroundColor: categoryColor + '18' }]}>
-          {habit.icon ? (
-            <Text style={styles.emoji}>{habit.icon}</Text>
-          ) : (
-            <Icon name="star-four-points" size={22} color={categoryColor} />
-          )}
+          <View style={styles.mainInfo}>
+            <View style={styles.titleRow}>
+              <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+              <View style={[styles.streakBadge, isMilestone && styles.streakMilestone]}>
+                <Icon
+                  name={isMilestone ? 'trophy' : 'fire'}
+                  size={11}
+                  color={isMilestone ? Colors.gold : Colors.amber}
+                />
+                <Text style={[styles.streakText, isMilestone && styles.streakTextMilestone]}>
+                  {currentStreak}
+                </Text>
+              </View>
+            </View>
+            
+            <View style={styles.metaRow}>
+               <View style={[styles.typeBadge, { backgroundColor: categoryColor + '12' }]}>
+                  <Text style={[styles.typeText, { color: categoryColor }]}>{habit.category || 'Focus'}</Text>
+               </View>
+               <View style={styles.dot} />
+               <Text style={styles.targetStatus}>
+                 TARGET: {formatValue(habit.current_target, habit.unit || '')}
+               </Text>
+            </View>
+          </View>
         </View>
 
-        {/* Content */}
-        <View style={styles.content}>
-          {/* Top row: name + streak */}
-          <View style={styles.topRow}>
-            <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-            <View style={[styles.streakBadge, isMilestone && styles.streakBadgeMilestone]}>
-              <Icon
-                name={isMilestone ? 'star' : 'fire'}
-                size={11}
-                color={isMilestone ? Colors.gold : Colors.amber}
+        <View style={styles.footer}>
+          <View style={styles.progressSection}>
+            <View style={styles.track}>
+              <View
+                style={[
+                  styles.fill,
+                  {
+                    backgroundColor: completedToday ? Colors.brand : categoryColor,
+                    width: `${Math.min(progressPercent, 100)}%`,
+                  },
+                ]}
               />
-              <Text style={[styles.streakText, isMilestone && styles.streakTextMilestone]}>
-                {currentStreak}
-              </Text>
+            </View>
+            <View style={styles.progressMeta}>
+               <Text style={styles.progressLabel}>
+                 {completedToday ? 'CAPACITY REACHED' : `${Math.round(progressPercent)}% OF DAILY COMPOUND`}
+               </Text>
+               {completedToday && (
+                 <View style={styles.successMarker}>
+                    <Icon name="check-decagram" size={14} color={Colors.brand} />
+                 </View>
+               )}
             </View>
           </View>
 
-          {/* Category label */}
-          <Text style={styles.category}>{habit.category?.toUpperCase() || 'FOCUS'}</Text>
-
-          {/* Goal row */}
-          <View style={styles.goalRow}>
-            <Text style={styles.goalLabel}>Today's Goal</Text>
-            <Text style={[styles.goalValue, { color: categoryColor }]}>
-              {formatValue(habit.current_target, habit.unit)}
-            </Text>
-          </View>
-
-          {/* Progress bar */}
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  backgroundColor: completedToday ? Colors.brand : categoryColor,
-                  width: `${Math.min(progressPercent, 100)}%`,
-                },
-              ]}
-            />
-          </View>
+          {!completedToday && (
+            <TouchableOpacity
+              onPress={handleLogPress}
+              style={styles.actionBtn}
+              activeOpacity={0.8}
+            >
+              <View style={styles.actionIconBox}>
+                 <Icon name="plus" size={20} color={Colors.brandDark} />
+              </View>
+              <Text style={styles.actionLabel}>LOG</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Right: completion button */}
-        <TouchableOpacity
-          onPress={handleLogPress}
-          style={styles.actionButton}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Icon
-            name={completedToday ? 'check-circle' : 'circle-outline'}
-            size={32}
-            color={completedToday ? Colors.brand : Colors.border}
-          />
-        </TouchableOpacity>
+        {completedToday && <View style={styles.completionOverlay} />}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -147,103 +157,182 @@ export function HabitCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 20,
+    borderRadius: BorderRadius.xxl,
     marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.l,
+    borderWidth: 1.5,
+    borderColor: Colors.borderLight,
+    ...Platform.select({
+      ios: Shadows.soft,
+      android: { elevation: 3 }
+    }),
     overflow: 'hidden',
-    ...Shadows.card,
   },
   touchable: {
+    padding: Spacing.l,
+    gap: Spacing.l,
+  },
+  topSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.l,
     gap: Spacing.m,
   },
-  accentBar: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 3,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
-  },
-  iconBox: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+  iconStage: {
+    width: 64,
+    height: 64,
+    borderRadius: BorderRadius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
+  },
+  iconInner: {
+    position: 'absolute',
+    inset: 4,
+    borderRadius: BorderRadius.l,
+    borderWidth: 1.5,
   },
   emoji: {
-    fontSize: 24,
+    fontSize: 28,
   },
-  content: {
+  mainInfo: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
-  topRow: {
+  titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   habitName: {
     ...Typography.heading,
+    fontSize: 19,
     color: Colors.textPrimary,
+    fontWeight: '900',
     flex: 1,
-    marginRight: Spacing.s,
+    marginRight: 8,
   },
   streakBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.amberLight,
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    gap: 3,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: Colors.amberLight + '40',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.amber + '15',
   },
-  streakBadgeMilestone: {
+  streakMilestone: {
     backgroundColor: Colors.goldLight,
+    borderColor: Colors.gold + '30',
   },
   streakText: {
-    ...Typography.label,
+    ...Typography.micro,
+    fontSize: 11,
+    fontWeight: '900',
     color: Colors.amber,
   },
   streakTextMilestone: {
     color: Colors.gold,
   },
-  category: {
-    ...Typography.micro,
-    color: Colors.textTertiary,
-    letterSpacing: 0.8,
-    marginTop: 1,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  goalRow: {
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  typeText: {
+    ...Typography.micro,
+    fontSize: 9,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: Colors.border,
+  },
+  targetStatus: {
+    ...Typography.micro,
+    color: Colors.textSecondary,
+    fontWeight: '800',
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: Spacing.l,
+  },
+  progressSection: {
+    flex: 1,
+    gap: 8,
+  },
+  track: {
+    height: 8,
+    backgroundColor: Colors.background,
+    borderRadius: 4,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  fill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: Spacing.s,
   },
-  goalLabel: {
-    ...Typography.caption,
+  progressLabel: {
+    ...Typography.micro,
+    fontSize: 9,
+    fontWeight: '900',
     color: Colors.textSecondary,
+    letterSpacing: 0.8,
   },
-  goalValue: {
-    ...Typography.body,
-    fontWeight: '700',
+  successMarker: {
+    backgroundColor: Colors.brand + '15',
+    padding: 2,
+    borderRadius: 8,
   },
-  progressTrack: {
-    height: 4,
-    backgroundColor: Colors.borderLight,
-    borderRadius: 2,
-    marginTop: Spacing.s,
-    overflow: 'hidden',
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.brandLight,
+    paddingLeft: 4,
+    paddingRight: 14,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 6,
+    borderWidth: 1.5,
+    borderColor: Colors.brand + '15',
   },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
+  actionIconBox: {
+     width: 28,
+     height: 28,
+     borderRadius: 8,
+     backgroundColor: Colors.surface,
+     alignItems: 'center',
+     justifyContent: 'center',
+     ...Shadows.soft,
   },
-  actionButton: {
-    paddingLeft: Spacing.s,
+  actionLabel: {
+    ...Typography.micro,
+    fontSize: 10,
+    fontWeight: '900',
+    color: Colors.brandDark,
+    letterSpacing: 1,
+  },
+  completionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    zIndex: 1,
+    pointerEvents: 'none',
   },
 });

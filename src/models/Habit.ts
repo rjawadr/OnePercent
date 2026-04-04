@@ -29,6 +29,7 @@ export interface Habit {
   sort_order: number;
   group_name?: string;
   habitbar_button: 'mark_done' | 'timer' | 'input';
+  increment?: number; // Added for tactical logging controllers
   
   // Lifecycle
   start_date: string;
@@ -36,5 +37,6 @@ export interface Habit {
   streak: number;
   last_logged_at?: string;
   is_active: boolean;
+  status: 'active' | 'archived';
   created_at: string;
 }

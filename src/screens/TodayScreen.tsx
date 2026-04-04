@@ -3,36 +3,69 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Scr
 import { Layout } from '../components/ui/Layout';
 import { HabitCard } from '../components/habits/HabitCard';
 import { useHabitStore } from '../store/habitStore';
-import { Colors, Typography, Spacing, Shadows } from '../theme';
+import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../theme';
 import { Button } from '../components/ui/Button';
 import { CreateHabitModal } from '../components/habits/CreateHabitModal';
 import { HabitLoggingModal } from '../components/habits/HabitLoggingModal';
 import { DateScrollRow } from '../components/habits/DateScrollRow';
 import { TodayHeader } from '../components/ui/TodayHeader';
+import { AmberBanner } from '../components/ui/AmberBanner';
+import { MilestoneCelebrationOverlay } from '../components/habits/MilestoneCelebrationOverlay';
+import { calculateConsecutiveMisses } from '../engine/onePercentEngine';
 import { Habit } from '../models/Habit';
 import { format, subDays, isSameDay } from 'date-fns';
 import { useNavigation } from '@react-navigation/native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Animated, { FadeIn, FadeInDown, Layout as ReanimatedLayout } from 'react-native-reanimated';
 
-const AllDoneState = ({ streakCount }: { streakCount: number }) => (
-  <View style={styles.allDoneContainer}>
-    <Text style={styles.allDoneEmoji}>✨</Text>
-    <Text style={styles.allDoneTitle}>All done for today.</Text>
-    <Text style={styles.allDoneSubtitle}>
-      You showed up.{"\n"}That's who you are.
-    </Text>
-    <View style={styles.allDoneStreakBadge}>
-      <Text style={styles.allDoneStreakText}>🔥 {streakCount} day streak</Text>
+const AllDoneState = ({ streakCount, totalHabits }: { streakCount: number, totalHabits: number }) => (
+  <Animated.View entering={FadeInDown.duration(800).springify()} style={styles.allDoneContainer}>
+    <View style={styles.allDoneHero}>
+      <View style={styles.successHalo}>
+        <View style={styles.successIconStage}>
+          <Icon name="check-decagram" size={64} color={Colors.brand} />
+        </View>
+      </View>
+      <Text style={styles.allDoneTitle}>Elite Status.</Text>
+      <Text style={styles.allDoneSubtitle}>
+        You've mastered all {totalHabits} targets today.{"\n"}The 1% compounding effect is now in full velocity.
+      </Text>
     </View>
-  </View>
+
+    <View style={styles.performanceGrid}>
+      <View style={styles.perfItem}>
+        <View style={styles.perfIconBox}>
+          <Icon name="fire" size={24} color={Colors.amber} />
+        </View>
+        <Text style={styles.perfValue}>{streakCount}</Text>
+        <Text style={styles.perfLabel}>STREAK</Text>
+      </View>
+      <View style={styles.dividerVertical} />
+      <View style={styles.perfItem}>
+        <View style={styles.perfIconBox}>
+          <Icon name="finance" size={24} color={Colors.brand} />
+        </View>
+        <Text style={styles.perfValue}>+1.00%</Text>
+        <Text style={styles.perfLabel}>EST. GROWTH</Text>
+      </View>
+    </View>
+
+    <TouchableOpacity style={styles.celebrationButton} activeOpacity={0.8}>
+      <Text style={styles.celebrationButtonText}>SHARE JOURNEY</Text>
+      <Icon name="share-variant" size={18} color={Colors.surface} />
+    </TouchableOpacity>
+  </Animated.View>
 );
 
 export const TodayScreen = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { habits, logs, streaks, addHabit, logProgress, initialize, isInitialized } = useHabitStore();
+  const { 
+    habits, logs, streaks, addHabit, logProgress, initialize, isInitialized,
+    pendingMilestone, milestoneHabitId, clearMilestone 
+  } = useHabitStore();
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateVisible, setIsCreateVisible] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
@@ -51,7 +84,6 @@ export const TodayScreen = () => {
     initialize().finally(() => setRefreshing(false));
   }, [initialize]);
 
-  // Calculate stats for header
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const activeDateStr = format(activeDate, 'yyyy-MM-dd');
 
@@ -60,8 +92,8 @@ export const TodayScreen = () => {
   }, [logs]);
 
   const completedTodayCount = useMemo(() => {
-    return habits.filter(h => isCompletedOnDate(h.id, todayStr)).length;
-  }, [habits, isCompletedOnDate, todayStr]);
+    return habits.filter(h => isCompletedOnDate(h.id, activeDateStr)).length;
+  }, [habits, isCompletedOnDate, activeDateStr]);
 
   const allCompletedOnActiveDate = useMemo(() => {
     if (habits.length === 0) return false;
@@ -86,8 +118,28 @@ export const TodayScreen = () => {
     });
   }, [habits, isCompletedOnDate]);
 
+  const missedHabitInfo = useMemo(() => {
+    if (!isSameDay(activeDate, new Date())) return null;
+    for (const habit of habits) {
+      if (!habit.is_active || habit.status === 'archived') continue;
+      const missedCount = calculateConsecutiveMisses(habit, logs);
+      if (missedCount >= 1) {
+        return {
+          habit,
+          missedCount,
+        };
+      }
+    }
+    return null;
+  }, [habits, logs, activeDate]);
+  
+  const milestoneHabit = useMemo(() => {
+    if (!pendingMilestone || !milestoneHabitId) return null;
+    return habits.find(h => h.id === milestoneHabitId);
+  }, [pendingMilestone, milestoneHabitId, habits]);
+
   const renderHeader = () => (
-    <View>
+    <View style={styles.headerArea}>
       <TodayHeader 
         completedCount={completedTodayCount} 
         totalCount={habits.length}
@@ -98,8 +150,26 @@ export const TodayScreen = () => {
         selectedDate={activeDate} 
         onSelectDate={setActiveDate} 
       />
+      {missedHabitInfo && (
+        <View style={styles.bannerContainer}>
+          <AmberBanner 
+            title={missedHabitInfo.missedCount === 1 
+              ? `Regain focus on ${missedHabitInfo.habit.name}.` 
+              : "Discipline Reset Required."}
+            subtitle={missedHabitInfo.missedCount === 1 
+              ? "Missed yesterday. Today matters twice as much." 
+              : "A new start. One tiny habit today."}
+          />
+        </View>
+      )}
       {habits.length > 0 && !allCompletedOnActiveDate && (
-        <Text style={styles.sectionLabel}>Daily Missions</Text>
+        <View style={styles.sectionHeader}>
+           <View style={styles.sectionTitleBlock}>
+              <Text style={styles.sectionLabel}>Daily Missions</Text>
+              <View style={styles.missionPulse} />
+           </View>
+           <Text style={styles.sectionSublabel}>{habits.length - completedTodayCount} PENDING ACTION</Text>
+        </View>
       )}
     </View>
   );
@@ -118,33 +188,36 @@ export const TodayScreen = () => {
   };
 
   const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyEmoji}>✨</Text>
-      <Text style={styles.emptyTitle}>Add your first habit</Text>
+    <Animated.View entering={FadeIn.delay(300)} style={styles.emptyContainer}>
+      <View style={styles.emptyIconGroup}>
+        <View style={styles.emptyHalo} />
+        <View style={styles.emptyCore}>
+          <Icon name="seed-outline" size={48} color={Colors.brand} />
+        </View>
+      </View>
+      <Text style={styles.emptyTitle}>The Foundation</Text>
       <Text style={styles.emptySubtitle}>
-        Start with one tiny thing.{"\n"}The 1% engine does the rest.
+        Compound interest follows consistent action.{"\n"}Plant your first behavior today.
       </Text>
-      <Button 
-        title="Create First Habit" 
-        onPress={() => setIsCreateVisible(true)} 
-        style={styles.emptyButton}
-      />
-    </View>
+      <TouchableOpacity 
+        style={styles.emptyActionBtn}
+        onPress={() => setIsCreateVisible(true)}
+      >
+        <Text style={styles.emptyActionText}>DEFINE FIRST HABIT</Text>
+        <Icon name="arrow-right" size={20} color={Colors.surface} />
+      </TouchableOpacity>
+    </Animated.View>
   );
-
-  const handleLogPress = (habit: Habit) => {
-    setSelectedHabit(habit);
-    // Modal state will trigger BottomSheet in HabitLoggingModal
-  };
 
   return (
     <Layout style={styles.container}>
-      <FlatList
-        data={habits.filter(h => h.is_active)}
+      <Animated.FlatList
+        data={allCompletedOnActiveDate ? [] : habits.filter(h => h.status !== 'archived')}
         keyExtractor={(item) => item.id}
+        itemLayoutAnimation={ReanimatedLayout.springify()}
         renderItem={({ item }) => {
           const completed = isCompletedOnDate(item.id, activeDateStr);
-          if (allCompletedOnActiveDate) return null; // Show AllDone state instead
+          if (allCompletedOnActiveDate) return null;
 
           return (
             <HabitCard 
@@ -153,12 +226,12 @@ export const TodayScreen = () => {
               progressPercent={getProgressPercent(item.id, activeDateStr)}
               currentStreak={getStreak(item.id)}
               onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
-              onLog={() => handleLogPress(item)}
+              onLog={() => setSelectedHabit(item)}
             />
           );
         }}
         ListHeaderComponent={renderHeader}
-        ListEmptyComponent={habits.length === 0 ? renderEmpty : (allCompletedOnActiveDate ? <AllDoneState streakCount={totalStreak} /> : null)}
+        ListEmptyComponent={habits.length === 0 ? renderEmpty : (allCompletedOnActiveDate ? <AllDoneState streakCount={totalStreak} totalHabits={habits.length} /> : null)}
         contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 120 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -175,7 +248,7 @@ export const TodayScreen = () => {
       {selectedHabit && (
         <HabitLoggingModal 
           habit={selectedHabit}
-          onLog={(value, memo) => {
+          onLog={(value) => {
             const numValue = typeof value === 'string' ? parseFloat(value) : value;
             logProgress(selectedHabit.id, numValue, numValue >= selectedHabit.current_target);
             setSelectedHabit(null);
@@ -185,13 +258,30 @@ export const TodayScreen = () => {
         />
       )}
       
-      <TouchableOpacity 
-        style={[styles.fab, { bottom: insets.bottom + 100, right: Spacing.xl }]} 
-        activeOpacity={0.8}
-        onPress={() => setIsCreateVisible(true)}
-      >
-        <Icon name="plus" size={32} color={Colors.surface} />
-      </TouchableOpacity>
+      {!selectedHabit && (
+        <Animated.View 
+          entering={FadeInDown.delay(500)}
+          style={[styles.fabContainer, { bottom: insets.bottom + 100, right: Spacing.xl }]}
+        >
+          <TouchableOpacity 
+            style={styles.fab}
+            activeOpacity={0.9}
+            onPress={() => setIsCreateVisible(true)}
+          >
+            <View style={styles.fabRing}>
+               <Icon name="plus" size={32} color={Colors.surface} />
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
+      {pendingMilestone && milestoneHabit && (
+        <MilestoneCelebrationOverlay 
+          milestone={pendingMilestone}
+          habit={milestoneHabit}
+          onDismiss={clearMilestone}
+        />
+      )}
     </Layout>
   );
 };
@@ -202,92 +292,225 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   listContent: {
-    // Dynamic padding applied inline
+    paddingTop: 10,
+  },
+  headerArea: {
+    backgroundColor: Colors.background,
+  },
+  bannerContainer: {
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.l,
+    paddingBottom: Spacing.m,
+  },
+  sectionTitleBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   sectionLabel: {
     ...Typography.heading,
+    fontSize: 20,
     color: Colors.textPrimary,
+    fontWeight: '900',
+  },
+  missionPulse: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.brand,
+  },
+  sectionSublabel: {
+    ...Typography.micro,
+    color: Colors.textSecondary,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  allDoneContainer: {
+    flex: 1,
+    alignItems: 'center',
+    marginTop: 60,
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.m,
-    paddingBottom: Spacing.s,
+  },
+  allDoneHero: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  successHalo: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: Colors.brandLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  successIconStage: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.soft,
+  },
+  allDoneTitle: {
+    ...Typography.title,
+    fontSize: 32,
+    color: Colors.textPrimary,
+    fontWeight: '900',
+  },
+  allDoneSubtitle: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    marginTop: 12,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  performanceGrid: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    padding: Spacing.xl,
+    borderRadius: BorderRadius.xxl,
+    width: '100%',
+    ...Shadows.soft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.borderLight,
+    marginBottom: 40,
+  },
+  perfItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  perfIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  perfValue: {
+    ...Typography.title,
+    fontSize: 24,
+    color: Colors.textPrimary,
+    fontWeight: '900',
+  },
+  perfLabel: {
+    ...Typography.micro,
+    color: Colors.textTertiary,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  dividerVertical: {
+    width: 1.5,
+    height: 60,
+    backgroundColor: Colors.borderLight,
+    marginHorizontal: 10,
+  },
+  celebrationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.brandDark,
+    paddingHorizontal: 32,
+    paddingVertical: 18,
+    borderRadius: 40,
+    gap: 12,
+    ...Shadows.elevated,
+  },
+  celebrationButtonText: {
+    ...Typography.label,
+    color: Colors.surface,
+    fontWeight: '900',
+    letterSpacing: 1.5,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
+    marginTop: 100,
     paddingHorizontal: Spacing.xl,
   },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: Spacing.m,
+  emptyIconGroup: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+  emptyHalo: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 2,
+    borderColor: Colors.brand + '20',
+    position: 'absolute',
+  },
+  emptyCore: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.brandLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyTitle: {
-    fontSize: 22,
-    fontWeight: '800',
+    ...Typography.title,
+    fontSize: 28,
     color: Colors.textPrimary,
-    textAlign: 'center',
+    fontWeight: '900',
   },
   emptySubtitle: {
-    fontSize: 15,
+    ...Typography.body,
     color: Colors.textSecondary,
     marginTop: 12,
-    marginBottom: Spacing.xl,
+    marginBottom: 40,
     textAlign: 'center',
     lineHeight: 22,
   },
-  emptyButton: {
-    width: '100%',
-  },
-  allDoneContainer: {
+  emptyActionBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: Spacing.xl,
+    backgroundColor: Colors.brand,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
+    borderRadius: BorderRadius.xl,
+    gap: 12,
+    ...Shadows.soft,
   },
-  allDoneEmoji: {
-    fontSize: 48,
+  emptyActionText: {
+    ...Typography.label,
+    color: Colors.surface,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
-  allDoneTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginTop: 16,
-  },
-  allDoneSubtitle: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    marginTop: 8,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  allDoneStreakBadge: {
-    backgroundColor: Colors.brandLight,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginTop: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.brand + '20',
-  },
-  allDoneStreakText: {
-    color: Colors.brand,
-    fontWeight: '700',
-    fontSize: 16,
+  fabContainer: {
+    position: 'absolute',
   },
   fab: {
-    position: 'absolute',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: Colors.brand,
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.elevated,
   },
-  fabText: {
-    fontSize: 32,
-    color: Colors.surface,
-    fontWeight: '300',
-    marginTop: -4,
+  fabRing: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2.5,
+    borderColor: Colors.surface + '30',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

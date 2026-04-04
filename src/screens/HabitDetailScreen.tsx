@@ -1,5 +1,5 @@
 import React, { useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated, StatusBar } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Layout } from '../components/ui/Layout';
 import { useHabitStore } from '../store/habitStore';
@@ -10,17 +10,17 @@ import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../theme';
 import { format, differenceInDays, parseISO, isSameMonth } from 'date-fns';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop, G, Line } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// Premium SVG Line Chart with Glow Effect and Vertical Markers
+// Premium SVG LineChart with Glow Effect
 const GlassLineChart = ({ data, color, projectedColor }: { data: any[], color: string, projectedColor: string }) => {
   const chartWidth = SCREEN_WIDTH - Spacing.xl * 2 - Spacing.l * 2;
   const chartHeight = 180;
   
   if (!data.length) return null;
 
-  // Improve max calculation to avoid sharp spikes
   const actualValues = data.map(d => d.actual);
   const maxActual = Math.max(...actualValues, 1);
   const maxProjected = Math.max(...data.map(d => d.projected), 1);
@@ -54,16 +54,11 @@ const GlassLineChart = ({ data, color, projectedColor }: { data: any[], color: s
       <Svg width={chartWidth} height={chartHeight}>
         <Defs>
           <LinearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={color} stopOpacity="0.25" />
-            <Stop offset="1" stopColor={color} stopOpacity="0" />
-          </LinearGradient>
-          <LinearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={color} stopOpacity="0.4" />
+            <Stop offset="0" stopColor={color} stopOpacity="0.2" />
             <Stop offset="1" stopColor={color} stopOpacity="0" />
           </LinearGradient>
         </Defs>
 
-        {/* Vertical Grid Lines */}
         <G opacity="0.05">
            {[0, 7, 14, 21, 29].map(i => (
              <Line 
@@ -74,44 +69,30 @@ const GlassLineChart = ({ data, color, projectedColor }: { data: any[], color: s
            ))}
         </G>
 
-        {/* Projected Optimal Path (1% Line) */}
         <Path 
           d={projectedPath} 
           fill="none" 
           stroke={projectedColor} 
           strokeWidth="1.5" 
           strokeDasharray="4, 4" 
-          opacity="0.3" 
+          opacity="0.25" 
         />
 
-        {/* Actual Area Fill */}
         <Path d={areaPath} fill="url(#fill)" />
 
-        {/* Outer Glow Stroke (Wide transparent line) */}
         <Path 
           d={actualPath} 
           fill="none" 
           stroke={color} 
-          strokeWidth="8" 
-          opacity="0.1"
-          strokeLinecap="round" 
-        />
-
-        {/* Main Data Line */}
-        <Path 
-          d={actualPath} 
-          fill="none" 
-          stroke={color} 
-          strokeWidth="3.5" 
+          strokeWidth="4" 
           strokeLinecap="round" 
           strokeLinejoin="round" 
         />
 
-        {/* Current Point Highlighter */}
         {points.length > 0 && (
           <G x={points[points.length - 1].x} y={points[points.length - 1].y}>
-            <Circle r="12" fill={color} opacity="0.15" />
-            <Circle r="6" fill="#FFF" stroke={color} strokeWidth="2.5" />
+            <Circle r="12" fill={color} opacity="0.1" />
+            <Circle r="6" fill="#FFF" stroke={color} strokeWidth="3" />
           </G>
         )}
       </Svg>
@@ -131,18 +112,17 @@ export const HabitDetailScreen = () => {
     logs.filter(l => l.habit_id === habitId).sort((a, b) => a.date.localeCompare(b.date)), 
   [logs, habitId]);
 
+  const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
 
   if (!habit) {
     return (
-      <Layout>
-        <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>Habit not found</Text>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.errorButton}>
-                <Text style={styles.errorButtonText}>Go Back</Text>
-            </TouchableOpacity>
-        </View>
-      </Layout>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Habit not found</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.errorButton}>
+           <Text style={styles.errorButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
     );
   }
 
@@ -186,81 +166,113 @@ export const HabitDetailScreen = () => {
     return data;
   }, [habit, habitLogs]);
 
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 100],
+  // Fade in only after the main large header is mostly scrolled away
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [120, 160],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
   return (
-    <Layout>
-      <Animated.View style={[styles.stickyHeader, { opacity: headerHeight }]}>
-         <Text style={styles.stickyTitle}>{habit.name}</Text>
+    <Layout style={{ flex: 1 }}>
+      <StatusBar barStyle="dark-content" />
+      
+      {/* Sticky Compact Header - Positioned relative to absolute top of screen */}
+      <Animated.View style={[
+        styles.stickyHeader, 
+        { 
+          opacity: headerOpacity,
+          paddingTop: insets.top,
+          height: 64 + insets.top
+        }
+      ]}>
+         <TouchableOpacity 
+           onPress={() => navigation.goBack()} 
+           style={styles.stickyBackButton}
+         >
+           <Icon name="arrow-left" size={20} color={Colors.textPrimary} />
+         </TouchableOpacity>
+         <Text style={styles.stickyTitle} numberOfLines={1}>{habit.name}</Text>
+         <View style={{ width: 40 }} /> 
       </Animated.View>
 
-      <View style={styles.topNav}>
-         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-             <Icon name="chevron-left" size={28} color={Colors.textPrimary} />
-         </TouchableOpacity>
-         <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle}>{habit.name}</Text>
-            <View style={styles.badgeRow}>
-               <View style={[styles.categoryBadge, { backgroundColor: Colors.brand + '15' }]}>
-                  <Text style={[styles.categoryText, { color: Colors.brandDark }]}>
-                    {habit.category || 'Mindset'}
-                  </Text>
-               </View>
-            </View>
-         </View>
-      </View>
-
       <Animated.ScrollView 
-        contentContainerStyle={styles.scrollContent} 
+        contentContainerStyle={[
+            styles.scrollContent,
+            { paddingTop: !StatusBar.currentHeight ? 0 : Spacing.m }
+        ]} 
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
       >
-        {/* Section A — Calendar */}
+        {/* Large Aesthetic Header */}
+        <View style={styles.topNav}>
+           <TouchableOpacity 
+             onPress={() => navigation.goBack()} 
+             style={styles.backButton}
+             activeOpacity={0.7}
+           >
+               <Icon name="arrow-left" size={24} color={Colors.textPrimary} />
+           </TouchableOpacity>
+           <View style={styles.headerInfo}>
+              <Text style={styles.headerTitle} numberOfLines={1}>{habit.name}</Text>
+              <View style={styles.badgeWrapper}>
+                  <View style={[styles.categoryChip, { backgroundColor: Colors.brand + '15' }]}>
+                      <Icon name="tag-outline" size={10} color={Colors.brandDark} />
+                      <Text style={[styles.categoryLabel, { color: Colors.brandDark }]}>
+                          {habit.category || 'Focus'}
+                      </Text>
+                  </View>
+              </View>
+           </View>
+        </View>
+
         <HabitCalendar logs={logs} habitId={habitId} />
 
-        {/* Section B — Performance Stats (Refined 2x2 Grid) */}
         <HabitStatsCards {...stats} />
 
-        {/* Section C — Growth Visualizer */}
-        <View style={styles.premiumCard}>
-            <View style={styles.cardHeader}>
-               <Icon name="chart-bell-curve-cumulative" size={20} color={Colors.brand} />
-               <Text style={styles.cardTitle}>Compound Growth</Text>
+        <View style={styles.chartCard}>
+            <View style={styles.sectionHeader}>
+               <View style={styles.titleGroup}>
+                  <Icon name="chart-bell-curve" size={20} color={Colors.textTertiary} />
+                  <Text style={styles.sectionTitle}>Compound Trajectory</Text>
+               </View>
             </View>
+            
             <GlassLineChart 
               data={chartData} 
               color={Colors.brand} 
               projectedColor={Colors.textTertiary} 
             />
+            
             <View style={styles.chartLegend}>
                 <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: Colors.brand }]} />
                     <Text style={styles.legendText}>Actual Progress</Text>
                 </View>
                 <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: Colors.textTertiary, opacity: 0.5 }]} />
+                    <View style={[styles.legendDot, { backgroundColor: Colors.textTertiary, opacity: 0.4 }]} />
                     <Text style={styles.legendText}>1% Optimal Path</Text>
                 </View>
             </View>
         </View>
 
-        {/* Section D — Identity Quotes */}
-        <View style={styles.quoteCard}>
-            <Icon name="format-quote-open" size={40} color={Colors.brand + '15'} style={styles.quoteIcon} />
-            <Text style={styles.quoteIdentityLabel}>Identity Statement</Text>
-            <Text style={styles.quoteText}>
-                "{habit.identity_statement || 'I am someone who prioritizes this habit every day.'}"
+        <View style={styles.mantraCard}>
+            <Icon name="format-quote-open" size={48} color={Colors.brand + '10'} style={styles.quoteIcon} />
+            <Text style={styles.mantraLabel}>Identity Statement</Text>
+            <Text style={styles.mantraText}>
+                "{habit.identity_statement || 'I am crafting a better version of myself through daily discipline.'}"
             </Text>
             
             {habit.anchor_habit && (
-              <View style={styles.anchorBox}>
-                <Text style={styles.anchorLabel}>Anchor Prompt</Text>
-                <Text style={styles.anchorValue}>"After I {habit.anchor_habit}, I will..."</Text>
+              <View style={styles.anchorContainer}>
+                <View style={[styles.anchorIconBox, { backgroundColor: Colors.brand + '10' }]}>
+                    <Icon name="anchor" size={16} color={Colors.brandDark} />
+                </View>
+                <View style={styles.anchorInfo}>
+                    <Text style={styles.anchorHeader}>Behavior Anchor</Text>
+                    <Text style={styles.anchorContent}>"After I {habit.anchor_habit}..."</Text>
+                </View>
               </View>
             )}
         </View>
@@ -281,90 +293,115 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 60,
     backgroundColor: Colors.surface,
-    zIndex: 10,
+    zIndex: 1000, // Ensure it stays on top of everything
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
-    ...Shadows.soft,
+    ...Shadows.elevated,
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.m,
+  },
+  stickyBackButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stickyTitle: {
     ...Typography.heading,
     fontSize: 18,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    flex: 1,
+    textAlign: 'center',
   },
   topNav: {
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.m,
+    paddingVertical: Spacing.l,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-  },
-  headerInfo: {
-    flex: 1,
+    backgroundColor: 'transparent',
+    marginBottom: Spacing.m,
   },
   backButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 14,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.m,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     ...Shadows.soft,
+  },
+  headerInfo: {
+    flex: 1,
   },
   headerTitle: {
     ...Typography.heading,
-    fontSize: 26,
+    fontSize: 28,
+    fontWeight: '900',
     color: Colors.textPrimary,
-    lineHeight: 32,
+    lineHeight: 34,
   },
-  badgeRow: {
+  badgeWrapper: {
     flexDirection: 'row',
-    marginTop: 4,
+    marginTop: 6,
   },
-  categoryBadge: {
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: BorderRadius.full,
   },
-  categoryText: {
+  categoryLabel: {
     ...Typography.micro,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
   scrollContent: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.m,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
-  premiumCard: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.l,
+  },
+  titleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionTitle: {
+    ...Typography.heading,
+    fontSize: 16,
+    color: Colors.textSecondary,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  chartCard: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
-    padding: Spacing.l,
+    padding: Spacing.xl,
     marginBottom: Spacing.xl,
     borderWidth: 1,
     borderColor: Colors.borderLight,
     ...Shadows.card,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.s,
-    marginBottom: Spacing.l,
-  },
-  cardTitle: {
-    ...Typography.heading,
-    fontSize: 18,
-    color: Colors.textPrimary,
-  },
   chartWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: Spacing.m,
+    marginVertical: Spacing.m,
   },
   chartLegend: {
     flexDirection: 'row',
@@ -375,84 +412,103 @@ const styles = StyleSheet.create({
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   legendText: {
-    ...Typography.caption,
+    ...Typography.micro,
     color: Colors.textSecondary,
+    fontWeight: '700',
     fontSize: 11,
   },
-  quoteCard: {
+  mantraCard: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     padding: Spacing.xl,
     marginBottom: Spacing.xl,
     position: 'relative',
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     ...Shadows.card,
   },
   quoteIcon: {
     position: 'absolute',
-    top: -10,
-    left: 10,
+    top: 5,
+    left: 5,
   },
-  quoteIdentityLabel: {
+  mantraLabel: {
     ...Typography.micro,
-    color: Colors.textTertiary,
-    marginBottom: 8,
+    color: Colors.brandDark,
+    fontWeight: '900',
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 2,
+    marginBottom: 12,
   },
-  quoteText: {
+  mantraText: {
     ...Typography.body,
-    fontSize: 18,
-    fontStyle: 'italic',
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.textPrimary,
-    lineHeight: 26,
-    fontWeight: '600',
+    fontStyle: 'italic',
+    lineHeight: 30,
   },
-  anchorBox: {
-    marginTop: Spacing.l,
-    paddingTop: Spacing.l,
+  anchorContainer: {
+    marginTop: Spacing.xl,
+    paddingTop: Spacing.xl,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
-  anchorLabel: {
+  anchorIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  anchorInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  anchorHeader: {
     ...Typography.micro,
     color: Colors.textTertiary,
-    fontSize: 10,
+    fontWeight: '800',
     textTransform: 'uppercase',
   },
-  anchorValue: {
+  anchorContent: {
     ...Typography.body,
-    fontWeight: '500',
+    fontWeight: '700',
     color: Colors.brandDark,
-    marginTop: 4,
+    fontSize: 16,
   },
   errorContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.xl,
+    backgroundColor: Colors.background,
   },
   errorText: {
-    ...Typography.body,
+    ...Typography.heading,
     color: Colors.textSecondary,
     marginBottom: Spacing.l,
   },
   errorButton: {
     backgroundColor: Colors.brand,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.m,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: BorderRadius.full,
   },
   errorButtonText: {
+    ...Typography.label,
     color: '#FFF',
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

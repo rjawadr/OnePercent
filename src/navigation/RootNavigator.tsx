@@ -8,7 +8,9 @@ import {
   PhysicalScreen, 
   StatsScreen, 
   SocialScreen,
-  HabitDetailScreen 
+  HabitDetailScreen,
+  SettingsScreen,
+  HabitManagerScreen 
 } from '../screens';
 import { CustomTabBar } from '../components/ui/CustomTabBar';
 import { Colors } from '../theme';
@@ -19,6 +21,14 @@ const Stack = createNativeStackNavigator();
 const TodayStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="TodayRoot" component={TodayScreen} />
+    <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
+  </Stack.Navigator>
+);
+
+const SettingsStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="SettingsRoot" component={SettingsScreen} />
+    <Stack.Screen name="HabitManager" component={HabitManagerScreen} />
     <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
   </Stack.Navigator>
 );
@@ -36,7 +46,7 @@ export const RootNavigator = () => {
         <Tab.Screen name="Therapy" component={TherapyScreen} />
         <Tab.Screen name="Physical" component={PhysicalScreen} />
         <Tab.Screen name="Stats" component={StatsScreen} />
-        <Tab.Screen name="Social" component={SocialScreen} />
+        <Tab.Screen name="Settings" component={SettingsStack} />
       </Tab.Navigator>
     </NavigationContainer>
   );

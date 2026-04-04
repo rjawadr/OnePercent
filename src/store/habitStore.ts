@@ -14,6 +14,8 @@ interface HabitState {
   logs: DailyLog[];
   streaks: Streak[];
   isInitialized: boolean;
+  pendingMilestone: string | null;
+  milestoneHabitId: string | null;
   
   // Actions
   initialize: () => Promise<void>;
@@ -21,6 +23,8 @@ interface HabitState {
   updateHabit: (id: string, updates: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
   logProgress: (habitId: string, valueAchieved: number, isCompleted: boolean) => Promise<void>;
+  archiveHabit: (id: string, archive: boolean) => Promise<void>;
+  clearMilestone: () => void;
 }
 
 export const useHabitStore = create<HabitState>()(
@@ -30,6 +34,10 @@ export const useHabitStore = create<HabitState>()(
       logs: [],
       streaks: [],
       isInitialized: false,
+      pendingMilestone: null,
+      milestoneHabitId: null,
+
+      clearMilestone: () => set({ pendingMilestone: null, milestoneHabitId: null }),
 
       initialize: async () => {
         try {
@@ -51,7 +59,7 @@ export const useHabitStore = create<HabitState>()(
       addHabit: (habit) => {
         set((state) => ({ habits: [...state.habits, habit] }));
         db.executeAsync(
-          'INSERT INTO habits (id, name, category, icon, color, baseline_value, current_target, unit, frequency, improvement_frequency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          'INSERT INTO habits (id, name, category, icon, color, baseline_value, current_target, unit, frequency, improvement_frequency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
           [
             habit.id, 
             habit.name, 
@@ -62,20 +70,48 @@ export const useHabitStore = create<HabitState>()(
             habit.current_target, 
             habit.unit, 
             habit.frequency, 
-            habit.improvement_frequency
+            habit.improvement_frequency,
+            habit.status || 'active'
           ]
         );
       },
 
-      updateHabit: (id, updates) =>
+      updateHabit: (id: string, updates: Partial<Habit>) => {
         set((state) => ({
           habits: state.habits.map((h) => (h.id === id ? { ...h, ...updates } : h)),
-        })),
+        }));
 
-      deleteHabit: (id) =>
+        // Generate dynamic update query
+        const keys = Object.keys(updates);
+        if (keys.length === 0) return;
+
+        const setClause = keys.map(k => `${k} = ?`).join(', ');
+        const values = Object.values(updates).map(v => v === undefined ? null : v);
+        
+        db.executeAsync(
+          `UPDATE habits SET ${setClause} WHERE id = ?`,
+          [...values, id]
+        );
+      },
+
+      archiveHabit: async (id: string, archive: boolean) => {
+        const status = archive ? 'archived' : 'active';
+        set((state) => ({
+          habits: state.habits.map((h) => (h.id === id ? { ...h, status } : h)),
+        }));
+        
+        await db.executeAsync(
+          'UPDATE habits SET status = ? WHERE id = ?',
+          [status, id]
+        );
+      },
+
+      deleteHabit: (id: string) => {
         set((state) => ({
           habits: state.habits.filter((h) => h.id !== id),
-        })),
+        }));
+        db.executeAsync('DELETE FROM habits WHERE id = ?', [id]);
+      },
 
       logProgress: async (habitId, valueAchieved, isCompleted) => {
         const habit = get().habits.find((h) => h.id === habitId);
@@ -85,7 +121,7 @@ export const useHabitStore = create<HabitState>()(
         const today = now.toISOString().split('T')[0];
         
         // 1. Update Streaks in DB via Service
-        const { newStreak } = await StreakService.onHabitCompleted(habitId, db);
+        const { newStreak, badgeUnlocked } = await StreakService.onHabitCompleted(habitId, db);
         
         // 2. Fetch updated streaks for state
         const streakRes = await db.executeAsync('SELECT * FROM streaks');
@@ -121,6 +157,8 @@ export const useHabitStore = create<HabitState>()(
         set((state) => ({
           logs: [...state.logs, newLog],
           streaks,
+          pendingMilestone: badgeUnlocked || state.pendingMilestone,
+          milestoneHabitId: badgeUnlocked ? habitId : state.milestoneHabitId,
           habits: state.habits.map((h) => 
             h.id === habitId 
               ? { ...h, streak: newStreak, current_target: nextTarget, last_logged_at: now.toISOString() } 

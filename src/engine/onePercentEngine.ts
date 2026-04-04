@@ -1,4 +1,6 @@
 import { Habit } from '../models/Habit';
+import { DailyLog } from '../models/DailyLog';
+import { format, subDays, isSameDay } from 'date-fns';
 
 /**
  * OnePct Engine Logic
@@ -123,3 +125,34 @@ export const formatValue = (value: number, unit: string): string => {
   const display = Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(1);
   return `${display} ${unit}`;
 };
+
+/**
+ * Calculates consecutive missed days for a habit.
+ * A "miss" is a day that is NOT a rest day and has no completion log.
+ */
+export function calculateConsecutiveMisses(habit: Habit, logs: DailyLog[], today: Date = new Date()): number {
+  const habitLogs = logs.filter(l => l.habit_id === habit.id);
+  let missedCount = 0;
+  let checkDate = subDays(today, 1); // Start from yesterday
+  
+  // Look back up to 30 days or until habit start date
+  const startDate = new Date(habit.created_at || habit.start_date);
+
+  for (let i = 0; i < 30; i++) {
+    if (isSameDay(checkDate, startDate) || checkDate < startDate) break;
+
+    const dateStr = format(checkDate, 'yyyy-MM-dd');
+    const wasCompleted = habitLogs.some(l => l.date === dateStr && l.is_completed);
+    
+    if (wasCompleted) break;
+
+    // If it wasn't a rest day, it counts as a miss
+    if (!isRestDay(habit.active_days || '1111111', checkDate)) {
+      missedCount++;
+    }
+    
+    checkDate = subDays(checkDate, 1);
+  }
+
+  return missedCount;
+}

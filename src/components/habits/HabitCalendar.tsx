@@ -58,11 +58,6 @@ export const HabitCalendar = ({ logs, habitId, month: initialMonth = new Date() 
     return completedDates.some(d => isSameDay(d, day));
   };
 
-  const isMissed = (day: Date) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
-    return !loggedDates.includes(dateStr) && !isToday(day) && day < new Date();
-  };
-
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
@@ -100,7 +95,6 @@ export const HabitCalendar = ({ logs, habitId, month: initialMonth = new Date() 
               <Icon name="check" size={8} color="#FFF" />
             </View>
           )}
-          {today && !completed && <View style={styles.todayGlow} />}
         </View>
       </View>
     );
@@ -137,13 +131,15 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     padding: Spacing.l,
     marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     ...Shadows.card,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: Spacing.l,
+    marginBottom: Spacing.xl,
     backgroundColor: Colors.background,
     padding: 6,
     borderRadius: BorderRadius.l,
@@ -161,19 +157,20 @@ const styles = StyleSheet.create({
     ...Typography.heading,
     fontSize: 16,
     color: Colors.textPrimary,
+    fontWeight: '800',
   },
   weekHeader: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.l,
   },
   weekLabel: {
     width: 32,
     textAlign: 'center',
     ...Typography.micro,
     color: Colors.textTertiary,
-    fontSize: 10,
-    letterSpacing: 1,
+    fontSize: 11,
+    letterSpacing: 1.5,
     fontWeight: '800',
   },
   grid: {
@@ -185,14 +182,16 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 4,
   },
   dayCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 38,
+    height: 38,
+    borderRadius: BorderRadius.l,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    backgroundColor: Colors.background + '50',
   },
   dayCircleCompleted: {
     backgroundColor: Colors.brand,
@@ -204,12 +203,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.brand,
   },
   dayCircleInactive: {
-    opacity: 0.15,
+    opacity: 0.1,
   },
   dayText: {
     ...Typography.label,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.textPrimary,
+    fontWeight: '600',
   },
   dayTextCompleted: {
     color: '#FFF',
@@ -228,19 +228,11 @@ const styles = StyleSheet.create({
     right: -2,
     backgroundColor: Colors.brandDark,
     borderRadius: 6,
-    width: 12,
-    height: 12,
+    width: 14,
+    height: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#FFF',
-  },
-  todayGlow: {
-    position: 'absolute',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.brand,
-    opacity: 0.1,
+    borderWidth: 1.5,
+    borderColor: Colors.surface,
   },
 });

@@ -4,22 +4,26 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../theme';
 
 const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - Spacing.xl * 2 - Spacing.m) / 2;
+const GRID_SPACING = Spacing.m;
+const CARD_WIDTH = (width - Spacing.xl * 2 - GRID_SPACING) / 2;
 
 interface StatCardProps {
   label: string;
   value: string | number;
   icon: string;
   color: string;
+  subtitle?: string;
 }
 
-const StatCard = ({ label, value, icon, color }: StatCardProps) => {
-  const scale = new Animated.Value(1);
+const StatCard = ({ label, value, icon, color, subtitle }: StatCardProps) => {
+  const scale = React.useRef(new Animated.Value(1)).current;
 
   const onPressIn = () => {
     Animated.spring(scale, {
-      toValue: 0.95,
+      toValue: 0.96,
       useNativeDriver: true,
+      tension: 100,
+      friction: 10,
     }).start();
   };
 
@@ -27,18 +31,23 @@ const StatCard = ({ label, value, icon, color }: StatCardProps) => {
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
+      tension: 100,
+      friction: 10,
     }).start();
   };
 
   return (
     <Pressable onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View style={[styles.card, { borderLeftColor: color, transform: [{ scale }] }]}>
-        <View style={[styles.iconContainer, { backgroundColor: color + '15' }]}>
-          <Icon name={icon} size={22} color={color} />
+      <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.iconContainer, { backgroundColor: color + '12' }]}>
+            <Icon name={icon} size={22} color={color} />
+          </View>
+          <Text style={[styles.value, { color }]}>{value}</Text>
         </View>
-        <View style={styles.statInfo}>
-          <Text style={styles.value}>{value}</Text>
-          <Text style={styles.label}>{label}</Text>
+        <View style={styles.cardFooter}>
+           <Text style={styles.label}>{label}</Text>
+           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
       </Animated.View>
     </Pressable>
@@ -67,34 +76,41 @@ export const HabitStatsCards = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Icon name="poll" size={20} color={Colors.brand} />
-        <Text style={styles.sectionTitle}>Performance</Text>
+      <View style={styles.sectionHeader}>
+        <View style={styles.titleGroup}>
+           <Icon name="chart-box-outline" size={20} color={Colors.textTertiary} />
+           <Text style={styles.sectionTitle}>Performance Analytics</Text>
+        </View>
       </View>
+      
       <View style={styles.grid}>
         <StatCard
           icon="fire"
           label="Current Streak"
           value={`${currentStreak}d`}
-          color="#FF7A00"
+          color={Colors.amber}
+          subtitle="Showing up"
         />
         <StatCard
-          icon="medal-outline"
-          label="Best Streak"
+          icon="trophy-outline"
+          label="Personal Best"
           value={`${bestStreak}d`}
-          color="#FFC107"
+          color={Colors.gold}
+          subtitle="Record to beat"
         />
         <StatCard
-          icon="calendar-check"
+          icon="calendar-month-outline"
           label="This Month"
           value={`${monthRate}%`}
           color={Colors.brand}
+          subtitle="Discipline rate"
         />
         <StatCard
-          icon="chart-timeline-variant-shimmer"
-          label="Overall Rate"
+          icon="chart-timeline-variant"
+          label="Overall Consistency"
           value={`${overallRate}%`}
-          color="#7E57C2"
+          color={Colors.purple}
+          subtitle="Lifetime average"
         />
       </View>
     </View>
@@ -105,56 +121,69 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: Spacing.xl,
   },
-  headerRow: {
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.m,
+    paddingHorizontal: 4,
+  },
+  titleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.s,
-    marginBottom: Spacing.m,
-    paddingLeft: 4,
+    gap: 8,
   },
   sectionTitle: {
     ...Typography.heading,
-    fontSize: 18,
-    color: Colors.textPrimary,
+    fontSize: 16,
+    color: Colors.textSecondary,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.m,
+    gap: GRID_SPACING,
   },
   card: {
     width: CARD_WIDTH,
     backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.l,
-    padding: Spacing.m,
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: Spacing.s,
-    borderLeftWidth: 4,
-    ...Shadows.card,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.l,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    ...Shadows.soft,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: BorderRadius.l,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
-  statInfo: {
-    width: '100%',
+  cardFooter: {
+    gap: 2,
   },
   value: {
-    ...Typography.heading,
-    fontSize: 22,
-    color: Colors.textPrimary,
-    lineHeight: 28,
+    ...Typography.title,
+    fontSize: 24,
+    fontWeight: '800',
   },
   label: {
+    ...Typography.heading,
+    fontSize: 14,
+    color: Colors.textPrimary,
+  },
+  subtitle: {
     ...Typography.micro,
-    fontSize: 10,
-    color: Colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    color: Colors.textTertiary,
+    fontWeight: '600',
   },
 });

@@ -21,7 +21,7 @@ export const COLORS = {
   // States (Anxiety-Safe)
   success: '#3EC9A7',
   warning: '#FDCB6E', // Soft Amber (Warning instead of red)
-  error: '#EB5757',   // Muted red (only for absolute failure)
+  error: '#FDCB6E',   // Soft Amber (Zero red according to user request)
   
   // Overlays
   overlay: 'rgba(28, 43, 74, 0.4)',
