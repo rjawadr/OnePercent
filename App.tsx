@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { initDb } from './src/db/client';
 import { notificationService } from './src/services/NotificationService';
 import { useHabitStore } from './src/store/habitStore';
+import { useAgoraphobiaStore } from './src/store/agoraphobiaStore';
 
 import { RootNavigator } from './src/navigation/RootNavigator';
 
@@ -28,6 +29,7 @@ function App() {
       try {
         await initDb();
         await useHabitStore.getState().initialize();
+        await useAgoraphobiaStore.getState().initialize();
         await notificationService.requestPermissions();
         await notificationService.createDefaultChannel();
         setIsReady(true);

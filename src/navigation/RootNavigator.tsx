@@ -10,7 +10,14 @@ import {
   SocialScreen,
   HabitDetailScreen,
   SettingsScreen,
-  HabitManagerScreen 
+  HabitManagerScreen,
+  AgoraphobiaHomeScreen,
+  FearProfileOnboardingScreen,
+  ExposureLadderScreen,
+  ActiveSessionScreen,
+  SessionReviewScreen,
+  ThoughtRecordScreen,
+  AgoraphobiaStatsScreen,
 } from '../screens';
 import { CustomTabBar } from '../components/ui/CustomTabBar';
 import { Colors } from '../theme';
@@ -22,6 +29,19 @@ const TodayStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="TodayRoot" component={TodayScreen} />
     <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
+  </Stack.Navigator>
+);
+
+const TherapyStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="TherapyRoot" component={TherapyScreen} />
+    <Stack.Screen name="AgoraphobiaHome" component={AgoraphobiaHomeScreen} />
+    <Stack.Screen name="FearProfileOnboarding" component={FearProfileOnboardingScreen} />
+    <Stack.Screen name="ExposureLadder" component={ExposureLadderScreen} />
+    <Stack.Screen name="ActiveSession" component={ActiveSessionScreen} />
+    <Stack.Screen name="SessionReview" component={SessionReviewScreen} />
+    <Stack.Screen name="ThoughtRecord" component={ThoughtRecordScreen} />
+    <Stack.Screen name="AgoraphobiaStats" component={AgoraphobiaStatsScreen} />
   </Stack.Navigator>
 );
 
@@ -43,7 +63,7 @@ export const RootNavigator = () => {
         }}
       >
         <Tab.Screen name="Today" component={TodayStack} />
-        <Tab.Screen name="Therapy" component={TherapyScreen} />
+        <Tab.Screen name="Therapy" component={TherapyStack} />
         <Tab.Screen name="Physical" component={PhysicalScreen} />
         <Tab.Screen name="Stats" component={StatsScreen} />
         <Tab.Screen name="Settings" component={SettingsStack} />
