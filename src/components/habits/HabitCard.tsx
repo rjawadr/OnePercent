@@ -8,6 +8,11 @@ import Animated, {
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../theme';
 import { Habit } from '../../models/Habit';
+import {
+  calculateNextTarget,
+  formatValue as engineFormatValue,
+  ImprovementFrequency,
+} from '../../engine/onePercentEngine';
 
 // Map category strings to professional, zero-red palette
 const CATEGORY_COLORS: Record<string, string> = {
@@ -23,6 +28,7 @@ interface HabitCardProps {
   completedToday: boolean;
   progressPercent: number;
   currentStreak: number;
+  valueAchieved: number;
   onPress: () => void;
   onLog: () => void;
   onLongPress?: () => void;
@@ -33,6 +39,7 @@ export function HabitCard({
   completedToday, 
   progressPercent, 
   currentStreak,
+  valueAchieved,
   onPress, 
   onLog,
   onLongPress 
@@ -60,8 +67,7 @@ export function HabitCard({
   };
 
   const formatValue = (val: number, unit: string) => {
-    const rounded = Number.isInteger(val) ? val : parseFloat(val.toFixed(1));
-    return `${rounded}${unit}`;
+    return engineFormatValue(val, unit);
   };
 
   return (
@@ -84,17 +90,29 @@ export function HabitCard({
 
           <View style={styles.mainInfo}>
             <View style={styles.titleRow}>
-              <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-              <View style={[styles.streakBadge, isMilestone && styles.streakMilestone]}>
-                <Icon
-                  name={isMilestone ? 'trophy' : 'fire'}
-                  size={11}
-                  color={isMilestone ? Colors.gold : Colors.amber}
-                />
-                <Text style={[styles.streakText, isMilestone && styles.streakTextMilestone]}>
-                  {currentStreak}
-                </Text>
+              <View style={styles.titleAndStreak}>
+                <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+                <View style={[styles.streakBadge, isMilestone && styles.streakMilestone]}>
+                  <Icon
+                    name={isMilestone ? 'trophy' : 'fire'}
+                    size={11}
+                    color={isMilestone ? Colors.gold : Colors.amber}
+                  />
+                  <Text style={[styles.streakText, isMilestone && styles.streakTextMilestone]}>
+                    {currentStreak}
+                  </Text>
+                </View>
               </View>
+
+              {!completedToday && (
+                <TouchableOpacity
+                  onPress={handleLogPress}
+                  style={styles.quickTrackBtn}
+                  activeOpacity={0.7}
+                >
+                  <Icon name="plus" size={22} color={Colors.surface} />
+                </TouchableOpacity>
+              )}
             </View>
             
             <View style={styles.metaRow}>
@@ -111,6 +129,7 @@ export function HabitCard({
 
         <View style={styles.footer}>
           <View style={styles.progressSection}>
+            {/* Progress Bar with subtle sub-track */}
             <View style={styles.track}>
               <View
                 style={[
@@ -122,33 +141,60 @@ export function HabitCard({
                 ]}
               />
             </View>
-            <View style={styles.progressMeta}>
-               <Text style={styles.progressLabel}>
-                 {completedToday ? 'CAPACITY REACHED' : `${Math.round(progressPercent)}% OF DAILY COMPOUND`}
-               </Text>
-               {completedToday && (
-                 <View style={styles.successMarker}>
-                    <Icon name="check-decagram" size={14} color={Colors.brand} />
-                 </View>
-               )}
-            </View>
-          </View>
 
-          {!completedToday && (
-            <TouchableOpacity
-              onPress={handleLogPress}
-              style={styles.actionBtn}
-              activeOpacity={0.8}
-            >
-              <View style={styles.actionIconBox}>
-                 <Icon name="plus" size={20} color={Colors.brandDark} />
+            {/* Clear Progress Meta */}
+            <View style={styles.progressMeta}>
+               <View style={styles.progressDetails}>
+                  <Text style={styles.progressValueLabel}>
+                    {completedToday 
+                      ? `${engineFormatValue(valueAchieved, habit.unit)} LOGGED`
+                      : valueAchieved > 0
+                        ? `${engineFormatValue(valueAchieved, habit.unit)} of ${engineFormatValue(habit.current_target, habit.unit)}`
+                        : 'READY TO START'}
+                  </Text>
+                  {completedToday && (
+                    <View style={styles.successBadge}>
+                       <Icon name="check-decagram" size={14} color={Colors.brand} />
+                       <Text style={styles.successBadgeText}>TARGET HIT</Text>
+                    </View>
+                  )}
+               </View>
+               <Text style={styles.percentText}>{Math.round(progressPercent)}%</Text>
+            </View>
+
+            {/* Premium Tomorrow's Goal Projection */}
+            {completedToday && (
+              <View style={styles.tomorrowProjection}>
+                <View style={[styles.projectionIconStage, { backgroundColor: Colors.brand + '15' }]}>
+                  <Icon name="trending-up" size={18} color={Colors.brand} />
+                </View>
+                <View style={styles.projectionInfo}>
+                  <Text style={styles.projectionLabel}>NEXT DAY TARGET</Text>
+                  <Text style={styles.projectionValue}>
+                    {engineFormatValue(
+                      calculateNextTarget(
+                        habit.current_target,
+                        (habit.improvement_frequency ?? 'daily') as ImprovementFrequency,
+                        habit.unit
+                      ),
+                      habit.unit
+                    )}
+                  </Text>
+                </View>
+                <View style={styles.growthIncentive}>
+                  <Text style={styles.growthText}>+1%</Text>
+                </View>
               </View>
-              <Text style={styles.actionLabel}>TRACK</Text>
-            </TouchableOpacity>
-          )}
+            )}
+          </View>
         </View>
 
-        {completedToday && <View style={styles.completionOverlay} />}
+        {completedToday && (
+          <View 
+            style={styles.completionOverlay} 
+            pointerEvents="none" 
+          />
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -203,13 +249,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  titleAndStreak: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   habitName: {
     ...Typography.heading,
     fontSize: 19,
     color: Colors.textPrimary,
     fontWeight: '900',
-    flex: 1,
-    marginRight: 8,
+    maxWidth: '70%',
+  },
+  quickTrackBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: Colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.soft,
   },
   streakBadge: {
     flexDirection: 'row',
@@ -289,45 +349,84 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  progressLabel: {
-    ...Typography.micro,
-    fontSize: 9,
-    fontWeight: '900',
-    color: Colors.textSecondary,
-    letterSpacing: 0.8,
-  },
-  successMarker: {
-    backgroundColor: Colors.brand + '15',
-    padding: 2,
-    borderRadius: 8,
-  },
-  actionBtn: {
+  progressDetails: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+  },
+  progressValueLabel: {
+    ...Typography.micro,
+    fontSize: 11,
+    fontWeight: '900',
+    color: Colors.textPrimary,
+    letterSpacing: 0.5,
+  },
+  percentText: {
+    ...Typography.micro,
+    fontSize: 10,
+    fontWeight: '800',
+    color: Colors.textSecondary,
+  },
+  successBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: Colors.brandLight,
-    paddingLeft: 4,
-    paddingRight: 14,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  successBadgeText: {
+    ...Typography.micro,
+    fontSize: 8,
+    fontWeight: '900',
+    color: Colors.brandDark,
+  },
+  tomorrowProjection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    padding: 12,
+    borderRadius: BorderRadius.xl,
+    marginTop: 4, // Tighten gap after progress meta
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    gap: 12,
+  },
+  projectionIconStage: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  projectionInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  projectionLabel: {
+    ...Typography.micro,
+    fontSize: 8,
+    fontWeight: '800',
+    color: Colors.textSecondary,
+    letterSpacing: 1,
+  },
+  projectionValue: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: Colors.textPrimary,
+  },
+  growthIncentive: {
+    backgroundColor: Colors.brandLight,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: Colors.brand + '15',
+    borderRadius: 8,
   },
-  actionIconBox: {
-     width: 28,
-     height: 28,
-     borderRadius: 8,
-     backgroundColor: Colors.surface,
-     alignItems: 'center',
-     justifyContent: 'center',
-     ...Shadows.soft,
-  },
-  actionLabel: {
+  growthText: {
     ...Typography.micro,
     fontSize: 10,
     fontWeight: '900',
-    color: Colors.brandDark,
-    letterSpacing: 1,
+    color: Colors.brand,
   },
   completionOverlay: {
     ...StyleSheet.absoluteFillObject,

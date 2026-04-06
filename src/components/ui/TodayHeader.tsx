@@ -9,6 +9,7 @@ interface TodayHeaderProps {
   completedCount: number;
   totalCount: number;
   onPressStats?: () => void;
+  onPressAdd?: () => void;
 }
 
 const GREETINGS = {
@@ -28,7 +29,7 @@ function getProGreeting(): string {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-export function TodayHeader({ completedCount, totalCount, onPressStats }: TodayHeaderProps) {
+export function TodayHeader({ completedCount, totalCount, onPressStats, onPressAdd }: TodayHeaderProps) {
   const today = new Date();
   const allDone = completedCount === totalCount && totalCount > 0;
   const greeting = useMemo(() => getProGreeting(), []);
@@ -39,39 +40,52 @@ export function TodayHeader({ completedCount, totalCount, onPressStats }: TodayH
       entering={SlideInUp.duration(800).springify().damping(15)} 
       style={styles.container}
     >
+      <View style={styles.headerTop}>
+        <Text style={styles.dateLabel}>{format(today, 'EEEE, MMM d').toUpperCase()}</Text>
+      </View>
+
       <View style={styles.content}>
         <View style={styles.textGroup}>
-          <Text style={styles.dateLabel}>{format(today, 'EEEE, MMM d').toUpperCase()}</Text>
           <View style={styles.greetingRow}>
             <Text style={styles.greetingText}>{greeting}</Text>
             <View style={styles.dot} />
           </View>
         </View>
 
-        <TouchableOpacity 
-          onPress={onPressStats}
-          activeOpacity={0.8}
-          style={[
-            styles.statPill,
-            allDone && styles.statPillDone
-          ]}
-        >
-          <View style={styles.iconCircle}>
-             <Icon 
-               name={allDone ? "rocket-outline" : "trending-up"} 
-               size={16} 
-               color={allDone ? Colors.surface : Colors.brand} 
-             />
-          </View>
-          <View style={styles.pillText}>
-             <Text style={[styles.countText, allDone && styles.countTextDone]}>
-               {completedCount}/{totalCount}
-             </Text>
-             <Text style={[styles.percentLabel, allDone && styles.percentLabelDone]}>
-               {Math.round(progressPercent)}%
-             </Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.actionCluster}>
+          <TouchableOpacity 
+            onPress={onPressStats}
+            activeOpacity={0.8}
+            style={[
+              styles.statPill,
+              allDone && styles.statPillDone
+            ]}
+          >
+            <View style={styles.iconCircle}>
+               <Icon 
+                 name={allDone ? "rocket-outline" : "trending-up"} 
+                 size={16} 
+                 color={allDone ? Colors.surface : Colors.brand} 
+               />
+            </View>
+            <View style={styles.pillText}>
+               <Text style={[styles.countText, allDone && styles.countTextDone]}>
+                 {completedCount}/{totalCount}
+               </Text>
+               <Text style={[styles.percentLabel, allDone && styles.percentLabelDone]}>
+                 {Math.round(progressPercent)}%
+               </Text>
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={onPressAdd}
+            activeOpacity={0.7}
+            style={styles.headerAddBtn}
+          >
+            <Icon name="plus" size={24} color={Colors.surface} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Subtle progress line */}
@@ -94,11 +108,29 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.m,
     backgroundColor: Colors.background,
   },
+  headerTop: {
+    marginBottom: Spacing.xs,
+  },
   content: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.m,
+    gap: Spacing.m,
+  },
+  actionCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.s,
+  },
+  headerAddBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Shadows.soft,
   },
   textGroup: {
     flex: 1,

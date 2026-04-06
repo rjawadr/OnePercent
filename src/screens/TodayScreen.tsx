@@ -62,9 +62,9 @@ const AllDoneState = ({ streakCount, totalHabits }: { streakCount: number, total
 export const TodayScreen = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { 
+  const {
     habits, logs, streaks, addHabit, logProgress, initialize, isInitialized,
-    pendingMilestone, milestoneHabitId, clearMilestone 
+    pendingMilestone, milestoneHabitId, clearMilestone
   } = useHabitStore();
   const [refreshing, setRefreshing] = useState(false);
   const [isCreateVisible, setIsCreateVisible] = useState(false);
@@ -132,7 +132,7 @@ export const TodayScreen = () => {
     }
     return null;
   }, [habits, logs, activeDate]);
-  
+
   const milestoneHabit = useMemo(() => {
     if (!pendingMilestone || !milestoneHabitId) return null;
     return habits.find(h => h.id === milestoneHabitId);
@@ -140,35 +140,36 @@ export const TodayScreen = () => {
 
   const renderHeader = () => (
     <View style={styles.headerArea}>
-      <TodayHeader 
-        completedCount={completedTodayCount} 
+      <TodayHeader
+        completedCount={completedTodayCount}
         totalCount={habits.length}
         onPressStats={() => navigation.navigate('Stats')}
+        onPressAdd={() => setIsCreateVisible(true)}
       />
-      <DateScrollRow 
-        days={daysData} 
-        selectedDate={activeDate} 
-        onSelectDate={setActiveDate} 
+      <DateScrollRow
+        days={daysData}
+        selectedDate={activeDate}
+        onSelectDate={setActiveDate}
       />
       {missedHabitInfo && (
         <View style={styles.bannerContainer}>
-          <AmberBanner 
-            title={missedHabitInfo.missedCount === 1 
-              ? `Regain focus on ${missedHabitInfo.habit.name}.` 
+          <AmberBanner
+            title={missedHabitInfo.missedCount === 1
+              ? `Regain focus on ${missedHabitInfo.habit.name}.`
               : "Discipline Reset Required."}
-            subtitle={missedHabitInfo.missedCount === 1 
-              ? "Missed yesterday. Today matters twice as much." 
+            subtitle={missedHabitInfo.missedCount === 1
+              ? "Missed yesterday. Today matters twice as much."
               : "A new start. One tiny habit today."}
           />
         </View>
       )}
       {habits.length > 0 && !allCompletedOnActiveDate && (
         <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleBlock}>
-              <Text style={styles.sectionLabel}>Daily Disciplines</Text>
-              <View style={styles.missionPulse} />
-            </View>
-           <Text style={styles.sectionSublabel}>{habits.length - completedTodayCount} PENDING ACTION</Text>
+          <View style={styles.sectionTitleBlock}>
+            <Text style={styles.sectionLabel}>Daily Disciplines</Text>
+            <View style={styles.missionPulse} />
+          </View>
+          <Text style={styles.sectionSublabel}>{habits.length - completedTodayCount} PENDING ACTION</Text>
         </View>
       )}
     </View>
@@ -180,6 +181,11 @@ export const TodayScreen = () => {
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return 0;
     return (log.value_achieved / habit.current_target) * 100;
+  };
+
+  const getValueAchieved = (habitId: string, dateStr: string) => {
+    const log = logs.find(l => l.habit_id === habitId && l.date === dateStr);
+    return log?.value_achieved ?? 0;
   };
 
   const getStreak = (habitId: string) => {
@@ -199,7 +205,7 @@ export const TodayScreen = () => {
       <Text style={styles.emptySubtitle}>
         Compound interest follows consistent action.{"\n"}Plant your first behavior today.
       </Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.emptyActionBtn}
         onPress={() => setIsCreateVisible(true)}
       >
@@ -220,11 +226,12 @@ export const TodayScreen = () => {
           if (allCompletedOnActiveDate) return null;
 
           return (
-            <HabitCard 
+            <HabitCard
               habit={item}
               completedToday={completed}
               progressPercent={getProgressPercent(item.id, activeDateStr)}
               currentStreak={getStreak(item.id)}
+              valueAchieved={getValueAchieved(item.id, activeDateStr)}
               onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
               onLog={() => setSelectedHabit(item)}
             />
@@ -239,14 +246,14 @@ export const TodayScreen = () => {
         }
       />
 
-      <CreateHabitModal 
+      <CreateHabitModal
         isVisible={isCreateVisible}
         onClose={() => setIsCreateVisible(false)}
         onAdd={addHabit}
       />
 
       {selectedHabit && (
-        <HabitLoggingModal 
+        <HabitLoggingModal
           habit={selectedHabit}
           onLog={(value) => {
             const numValue = typeof value === 'string' ? parseFloat(value) : value;
@@ -257,26 +264,11 @@ export const TodayScreen = () => {
           bottomSheetRef={bottomSheetRef as any}
         />
       )}
-      
-      {!selectedHabit && (
-        <Animated.View 
-          entering={FadeInDown.delay(500)}
-          style={[styles.fabContainer, { bottom: insets.bottom + 100, right: Spacing.xl }]}
-        >
-          <TouchableOpacity 
-            style={styles.fab}
-            activeOpacity={0.9}
-            onPress={() => setIsCreateVisible(true)}
-          >
-            <View style={styles.fabRing}>
-               <Icon name="plus" size={32} color={Colors.surface} />
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
+
+      {/* FAB removed - action moved to header */}
 
       {pendingMilestone && milestoneHabit && (
-        <MilestoneCelebrationOverlay 
+        <MilestoneCelebrationOverlay
           milestone={pendingMilestone}
           habit={milestoneHabit}
           onDismiss={clearMilestone}
