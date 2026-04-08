@@ -1,14 +1,132 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import { Layout } from '../components/ui/Layout';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
 import { projectExposureDifficulty } from '../engine/agoraphobiaEngine';
-import { Colors, Typography, Spacing } from '../theme';
+import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../theme';
+import Svg, { Path, Circle, Defs, LinearGradient, Stop, G, Line } from 'react-native-svg';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const SUDSTrendChart = ({ sessions, resets }: { sessions: any[], resets: any[] }) => {
+  const chartWidth = SCREEN_WIDTH - Spacing.xl * 2 - Spacing.l * 2;
+  const chartHeight = 160;
+
+  // We only chart completed sessions
+  const chronologicalSessions = [...sessions].reverse();
+  
+  if (chronologicalSessions.length < 2) return null;
+
+  const points = chronologicalSessions.map((s, i) => {
+    const val = s.post_suds ?? 0;
+    return val;
+  });
+
+  const maxVal = 10;
+  const minVal = 0;
+
+  const getX = (index: number) => (index / (points.length - 1)) * chartWidth;
+  const getY = (val: number) => chartHeight - ((val - minVal) / (maxVal - minVal)) * chartHeight;
+
+  const pathPoints = points.map((p, i) => ({ x: getX(i), y: getY(p) }));
+
+  const getPath = (pts: {x: number, y: number}[]) => {
+    if (pts.length < 2) return '';
+    let d = `M ${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i];
+      const p1 = pts[i+1];
+      const cp1x = p0.x + (p1.x - p0.x) / 2;
+      d += ` C ${cp1x},${p0.y} ${cp1x},${p1.y} ${p1.x},${p1.y}`;
+    }
+    return d;
+  };
+
+  const actualPath = getPath(pathPoints);
+  const areaPath = `${actualPath} L ${chartWidth},${chartHeight} L 0,${chartHeight} Z`;
+
+  // Find where to draw reset lines
+  const resetLines = resets.map(r => {
+    // Find the first session that happened AFTER the reset
+    const resetTime = new Date(r.timestamp).getTime();
+    const nextSessionIndex = chronologicalSessions.findIndex(s => new Date(s.created_at).getTime() > resetTime);
+    if (nextSessionIndex === -1) return null; // Reset happened after all sessions
+    // Place it slightly before the session
+    return Math.max(0, nextSessionIndex - 0.5);
+  }).filter(v => v !== null) as number[];
+
+  return (
+    <View style={styles.chartCard}>
+      <View style={styles.chartHeader}>
+        <Text style={styles.chartTitle}>SUDS Trend (Post-Session)</Text>
+      </View>
+      <View style={styles.chartWrapper}>
+        <Svg width={chartWidth} height={chartHeight}>
+          <Defs>
+            <LinearGradient id="fillSuds" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={Colors.brand} stopOpacity="0.2" />
+              <Stop offset="1" stopColor={Colors.brand} stopOpacity="0" />
+            </LinearGradient>
+          </Defs>
+
+          <G opacity="0.05">
+            {[0, 2, 4, 6, 8, 10].map(i => (
+              <Line 
+                key={i} 
+                x1="0" y1={getY(i)} x2={chartWidth} y2={getY(i)} 
+                stroke={Colors.textPrimary} strokeWidth="1" 
+              />
+            ))}
+          </G>
+
+          {resetLines.map((xIndex, i) => {
+             const cx = getX(xIndex);
+             return (
+               <G key={`reset-${i}`}>
+                 <Line 
+                   x1={cx} y1={0} x2={cx} y2={chartHeight}
+                   stroke={Colors.amber} strokeWidth="1.5" strokeDasharray="4 4"
+                   opacity="0.8"
+                 />
+                 <Circle cx={cx} cy={10} r={8} fill={Colors.surface} stroke={Colors.amber} strokeWidth="1.5" />
+                 <Path d={`M ${cx-3} ${7} A 2.5 2.5 0 1 1 ${cx-3} ${13} L ${cx-3} ${10} L ${cx-5} ${12} M ${cx-3} ${10} L ${cx-1} ${12}`} stroke={Colors.amber} strokeWidth="1.5" fill="none" />
+               </G>
+             );
+          })}
+
+          <Path d={areaPath} fill="url(#fillSuds)" />
+          <Path 
+            d={actualPath} 
+            fill="none" 
+            stroke={Colors.brand} 
+            strokeWidth="3" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+          />
+
+          {pathPoints.map((pt, i) => (
+            <Circle key={`pt-${i}`} cx={pt.x} cy={pt.y} r="4" fill={Colors.surface} stroke={Colors.brand} strokeWidth="2" />
+          ))}
+        </Svg>
+      </View>
+      <View style={styles.chartLegend}>
+         <View style={styles.legendItem}>
+             <View style={[styles.legendDot, { backgroundColor: Colors.brand }]} />
+             <Text style={styles.legendText}>SUDS</Text>
+         </View>
+         <View style={styles.legendItem}>
+             <Text style={{color: Colors.amber, fontSize: 14, fontWeight: '700', marginRight: 4}}>↺</Text>
+             <Text style={styles.legendText}>Target Reset</Text>
+         </View>
+      </View>
+    </View>
+  );
+};
 
 export const AgoraphobiaStatsScreen = ({ navigation }: any) => {
-  const { steps, sessions, thoughtRecords } = useAgoraphobiaStore();
+  const { steps, sessions, thoughtRecords, resets } = useAgoraphobiaStore();
 
   const completedSessions = useMemo(() => sessions.filter(s => s.status === 'completed'), [sessions]);
   const masteredSteps = useMemo(() => steps.filter(s => s.is_mastered).length, [steps]);
@@ -72,6 +190,11 @@ export const AgoraphobiaStatsScreen = ({ navigation }: any) => {
             </View>
           </Animated.View>
         )}
+
+        {/* SUDS Trend Chart with resets */}
+        <Animated.View entering={FadeInDown.delay(250)}>
+          <SUDSTrendChart sessions={completedSessions} resets={resets} />
+        </Animated.View>
 
         {/* Recent sessions */}
         {recentSessions.length > 0 && (
@@ -144,4 +267,12 @@ const styles = StyleSheet.create({
   sessionName: { ...Typography.label, color: Colors.textPrimary, fontSize: 14 },
   sessionMeta: { ...Typography.caption, color: Colors.textTertiary, marginTop: 2 },
   disclaimer: { ...Typography.caption, color: Colors.textTertiary, textAlign: 'center', paddingTop: Spacing.xxl, fontSize: 11 },
+  chartCard: { backgroundColor: Colors.surface, borderRadius: BorderRadius.xl, padding: Spacing.xl, marginTop: Spacing.l, borderWidth: 1, borderColor: Colors.borderLight, ...Shadows.card },
+  chartHeader: { marginBottom: Spacing.l },
+  chartTitle: { ...Typography.heading, fontSize: 16, color: Colors.textSecondary, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+  chartWrapper: { alignItems: 'center', justifyContent: 'center', marginVertical: Spacing.s },
+  chartLegend: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.l, gap: Spacing.xl },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendText: { ...Typography.micro, color: Colors.textSecondary, fontWeight: '700', fontSize: 11 },
 });

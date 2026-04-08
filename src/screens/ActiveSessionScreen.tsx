@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { SUDSSlider } from '../components/agoraphobia/SUDSSlider';
 import { SessionTimer } from '../components/agoraphobia/SessionTimer';
 import { CrisisButton, CrisisBanner } from '../components/agoraphobia/CrisisButton';
+import { SessionProjectionHint } from '../components/agoraphobia/SessionProjectionHint';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
 import {
   generateId,
@@ -45,6 +46,38 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
       setShowCrisisBanner(true);
     }
   }, []);
+
+  const handleCrisisPress = useCallback(() => {
+    if (!fearProfile?.crisis_helpline_number && !fearProfile?.emergency_contact_number) {
+      Alert.alert(
+        'Support Contacts',
+        'Set up your emergency contacts in Settings → Fear Profile.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
+
+    const buttons: any[] = [];
+    if (fearProfile.crisis_helpline_number) {
+      buttons.push({
+        text: 'Call Crisis Line',
+        onPress: () => Linking.openURL(`tel:${fearProfile.crisis_helpline_number}`),
+      });
+    }
+    if (fearProfile.emergency_contact_number) {
+      buttons.push({
+        text: `Call ${fearProfile.emergency_contact_name || 'Emergency Contact'}`,
+        onPress: () => Linking.openURL(`tel:${fearProfile.emergency_contact_number}`),
+      });
+    }
+    buttons.push({ text: "I'm safe, close", style: 'cancel' });
+
+    Alert.alert(
+      'Need Support?',
+      'Your wellbeing matters. Choose an option below.',
+      buttons
+    );
+  }, [fearProfile]);
 
   const handleStart = async () => {
     if (!step) return;
@@ -176,6 +209,10 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
                 )}
               </View>
 
+              {(preSuds >= 9 || showCrisisBanner) && (
+                <CrisisBanner onPress={handleCrisisPress} />
+              )}
+
               <Button
                 title={isRetro ? 'Log retrospective session' : 'Begin Exposure →'}
                 onPress={handleStart}
@@ -222,8 +259,8 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
                 textAlignVertical="top"
               />
 
-              {showCrisisBanner && (
-                <CrisisBanner onPress={() => {}} />
+              {(preSuds >= 9 || showCrisisBanner) && (
+                <CrisisBanner onPress={handleCrisisPress} />
               )}
 
               <Button
@@ -275,9 +312,11 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
                 textAlignVertical="top"
               />
 
-              {showCrisisBanner && (
-                <CrisisBanner onPress={() => {}} />
+              {(postSuds >= 9 || showCrisisBanner) && (
+                <CrisisBanner onPress={handleCrisisPress} />
               )}
+
+            {!step.is_mastered && <SessionProjectionHint />}
 
               <Button
                 title="Save Session"

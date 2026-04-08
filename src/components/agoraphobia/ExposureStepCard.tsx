@@ -3,12 +3,14 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { Colors, Typography, Spacing, Shadows } from '../../theme';
 import { ExposureStep } from '../../models/ExposureStep';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming, withDelay } from 'react-native-reanimated';
 
 interface ExposureStepCardProps {
   step: ExposureStep;
   sessionCount: number;
   isLocked: boolean;
   isCurrent: boolean;
+  isHighlighted?: boolean;
   onPress: () => void;
   onEdit?: () => void;
 }
@@ -18,11 +20,32 @@ export const ExposureStepCard = React.memo(({
   sessionCount,
   isLocked,
   isCurrent,
+  isHighlighted,
   onPress,
   onEdit,
 }: ExposureStepCardProps) => {
   const masteryProgress = Math.min(step.mastery_count / 2, 1);
   const difficultyLabel = `${step.difficulty_value} ${step.difficulty_unit}`;
+
+  const highlightAnim = useSharedValue(isHighlighted ? 1 : 0);
+
+  React.useEffect(() => {
+    if (isHighlighted) {
+      highlightAnim.value = withSequence(
+        withTiming(1, { duration: 0 }),
+        withDelay(2000, withTiming(0, { duration: 1500 }))
+      );
+    } else {
+      highlightAnim.value = 0;
+    }
+  }, [isHighlighted, highlightAnim]);
+
+  const highlightStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: Colors.brandLight,
+      opacity: highlightAnim.value,
+    };
+  });
 
   if (isLocked) {
     return (
@@ -49,6 +72,7 @@ export const ExposureStepCard = React.memo(({
         step.is_mastered && styles.cardMastered,
         isCurrent && styles.cardCurrent,
         pressed && styles.cardPressed,
+        isHighlighted && styles.cardHighlighted,
       ]}
       accessibilityRole="button"
       accessibilityLabel={`Exposure step: ${step.name}`}
@@ -112,6 +136,9 @@ export const ExposureStepCard = React.memo(({
           <Text style={styles.locationText}>{step.location_hint}</Text>
         </View>
       ) : null}
+
+      {/* Highlight Overlay */}
+      <Animated.View style={[StyleSheet.absoluteFill, styles.highlightOverlay, highlightStyle]} pointerEvents="none" />
     </Pressable>
   );
 });
@@ -141,6 +168,12 @@ const styles = StyleSheet.create({
   cardPressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
+  },
+  cardHighlighted: {
+    borderColor: Colors.brand,
+  },
+  highlightOverlay: {
+    borderRadius: 16,
   },
   lockedRow: {
     flexDirection: 'row',

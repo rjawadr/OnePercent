@@ -59,6 +59,7 @@ export function projectExposureDifficulty(
     at30: project(30),
     at90: project(90),
     at180: project(180),
+    at365: project(365),
   };
 }
 

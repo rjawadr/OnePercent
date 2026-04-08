@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Animated as RNAnimated, Modal } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import { Layout } from '../components/ui/Layout';
@@ -10,10 +10,63 @@ import { generateId } from '../engine/agoraphobiaEngine';
 import { EXPOSURE_TEMPLATES, ExposureTemplate } from '../data/exposureTemplates';
 import { Colors, Typography, Spacing, Shadows } from '../theme';
 import { ExposureStep } from '../models/ExposureStep';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from '@react-native-community/blur';
+import { ResetTargetBottomSheet } from '../components/agoraphobia/ResetTargetBottomSheet';
 
-export const ExposureLadderScreen = ({ navigation }: any) => {
-  const { steps, sessions, addStep, deleteStep, reorderSteps } = useAgoraphobiaStore();
-  const [showTemplates, setShowTemplates] = useState(steps.length === 0);
+export const ExposureLadderScreen = ({ navigation, route }: any) => {
+  const insets = useSafeAreaInsets();
+  const { steps, sessions, addStep, deleteStep, reorderSteps, initialize, isInitialized } = useAgoraphobiaStore();
+  const [showTemplates, setShowTemplates] = useState(
+    steps.length === 0 || route.params?.initialShowTemplates
+  );
+
+  useEffect(() => {
+    if (route.params?.initialShowTemplates) {
+      setShowTemplates(true);
+    }
+  }, [route.params?.initialShowTemplates]);
+  const [highlightedStepId, setHighlightedStepId] = useState<string | null>(null);
+  
+  // Toast state
+  const [showToast, setShowToast] = useState(false);
+  const toastAnim = useRef(new RNAnimated.Value(0)).current;
+
+  useEffect(() => {
+    if (route.params?.highlight) {
+      setHighlightedStepId(route.params.highlight);
+      setTimeout(() => setHighlightedStepId(null), 3500);
+      navigation.setParams({ highlight: undefined });
+    }
+    
+    if (route.params?.showSuccessToast) {
+      setShowToast(true);
+      RNAnimated.spring(toastAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 60,
+        friction: 10,
+      }).start();
+      
+      // Auto-dismiss after 4 seconds
+      setTimeout(() => {
+        dismissToast();
+      }, 4000);
+      
+      navigation.setParams({ showSuccessToast: undefined });
+    }
+  }, [route.params]);
+
+  const dismissToast = () => {
+    RNAnimated.spring(toastAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 60,
+      friction: 12,
+    }).start(() => {
+      setShowToast(false);
+    });
+  };
 
   const sessionCounts = useMemo(() => {
     const map: Record<string, number> = {};
@@ -33,7 +86,7 @@ export const ExposureLadderScreen = ({ navigation }: any) => {
   const handleSelectTemplate = async (template: ExposureTemplate) => {
     if (template.id === 'tpl_custom') {
       setShowTemplates(false);
-      // TODO: open custom step creator
+      navigation.navigate('CustomGoalSetup');
       return;
     }
 
@@ -76,13 +129,18 @@ export const ExposureLadderScreen = ({ navigation }: any) => {
     );
   };
 
-  const handleDeleteStep = (step: ExposureStep) => {
+  const [resetTargetStep, setResetTargetStep] = useState<ExposureStep | null>(null);
+
+  const handleStepOptions = (step: ExposureStep) => {
     Alert.alert(
-      'Remove Step',
-      `Remove "${step.name}" from your ladder?`,
+      'Step Options',
+      `Manage "${step.name}"`,
       [
+        {
+          text: 'Reset Target',
+          onPress: () => setResetTargetStep(step),
+        },
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => deleteStep(step.id) },
       ]
     );
   };
@@ -154,6 +212,9 @@ export const ExposureLadderScreen = ({ navigation }: any) => {
               <Text style={styles.summaryText}>
                 {steps.filter(s => s.is_mastered).length}/{steps.length} mastered
               </Text>
+              <Text style={styles.helpfulNote}>
+                💡 Long press any step to reset its target
+              </Text>
             </View>
 
             {/* Step list */}
@@ -164,18 +225,54 @@ export const ExposureLadderScreen = ({ navigation }: any) => {
                   sessionCount={sessionCounts[step.id] || 0}
                   isLocked={!step.is_unlocked}
                   isCurrent={step.id === currentStepId}
+                  isHighlighted={step.id === highlightedStepId}
                   onPress={() => {
                     if (step.is_unlocked) {
                       navigation.navigate('ActiveSession', { stepId: step.id });
                     }
                   }}
-                  onEdit={() => handleDeleteStep(step)}
+                  onEdit={() => handleStepOptions(step)}
                 />
               </Animated.View>
             ))}
           </>
         )}
       </ScrollView>
+
+      {/* Success Toast Overlay */}
+      <Modal visible={showToast} transparent animationType="none" onRequestClose={dismissToast}>
+        <View style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={dismissToast} />
+          <RNAnimated.View 
+            style={[
+              styles.toastContainer,
+              { bottom: 40 + insets.bottom, opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }] }
+            ]}
+          >
+            <BlurView style={styles.toastBlur} blurType="light" blurAmount={15} overlayColor="rgba(255, 255, 255, 0.7)" />
+            <View style={styles.toastContent}>
+              <View style={styles.toastHeader}>
+                <View style={styles.toastIcon}>
+                  <Icon name="check-circle" size={20} color={Colors.brand} />
+                </View>
+                <View style={styles.toastTextContainer}>
+                  <Text style={styles.toastTitle}>Your program is ready</Text>
+                  <Text style={styles.toastSubtitle}>Step 1 is unlocked.</Text>
+                </View>
+              </View>
+            </View>
+          </RNAnimated.View>
+        </View>
+      </Modal>
+
+      {resetTargetStep && (
+        <ResetTargetBottomSheet
+          stepId={resetTargetStep.id}
+          currentValue={resetTargetStep.current_difficulty}
+          unit={resetTargetStep.difficulty_unit}
+          onClose={() => setResetTargetStep(null)}
+        />
+      )}
     </Layout>
   );
 };
@@ -245,6 +342,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontWeight: '600',
   },
+  helpfulNote: {
+    ...Typography.micro,
+    color: Colors.brand,
+    marginTop: Spacing.s,
+    backgroundColor: Colors.brand + '15',
+    padding: Spacing.xs,
+    paddingHorizontal: Spacing.s,
+    borderRadius: 8,
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
+  },
   emptyState: {
     alignItems: 'center',
     paddingTop: 80,
@@ -253,5 +361,61 @@ const styles = StyleSheet.create({
   emptyText: {
     ...Typography.body,
     color: Colors.textTertiary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
+  },
+  toastContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    height: 70,
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...Shadows.elevated,
+    backgroundColor: Colors.surface,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
+    zIndex: 9999,
+  },
+  toastBlur: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  toastContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+  },
+  toastHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  toastIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: Colors.brandLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  toastTextContainer: {
+    flex: 1,
+  },
+  toastTitle: {
+    ...Typography.body,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    fontWeight: '800',
+  },
+  toastSubtitle: {
+    ...Typography.caption,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '600',
   },
 });

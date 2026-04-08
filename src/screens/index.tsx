@@ -13,3 +13,8 @@ export * from './ActiveSessionScreen';
 export * from './SessionReviewScreen';
 export * from './ThoughtRecordScreen';
 export * from './AgoraphobiaStatsScreen';
+export * from './CustomGoalSetupScreen';
+export * from './CustomGoalReviewScreen';
+export * from './TechniquesHomeScreen';
+export * from './CalmSessionScreen';
+export * from './GroundingScreen';

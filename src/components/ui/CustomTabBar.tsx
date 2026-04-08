@@ -37,8 +37,9 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
             label = 'Progress';
           } else if (route.name === 'Therapy') {
             iconName = 'leaf';
-          } else if (route.name === 'Physical') {
-            iconName = 'arm-flex';
+          } else if (route.name === 'Techniques') {
+            iconName = 'meditation';
+            label = 'Techniques';
           } else if (route.name === 'Social') {
             iconName = 'account-group';
           } else if (route.name === 'Settings') {

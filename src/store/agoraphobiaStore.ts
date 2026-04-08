@@ -13,11 +13,20 @@ import {
   generateId,
 } from '../engine/agoraphobiaEngine';
 
+export interface AgoraphobiaResetEvent {
+  id: string;
+  step_id: string;
+  timestamp: string;
+  new_target: number;
+  previous_target: number;
+}
+
 interface AgoraphobiaState {
   fearProfile: FearProfile | null;
   steps: ExposureStep[];
   sessions: ExposureSession[];
   thoughtRecords: ThoughtRecord[];
+  resets: AgoraphobiaResetEvent[];
   activeSessionId: string | null;
   isInitialized: boolean;
 
@@ -33,6 +42,22 @@ interface AgoraphobiaState {
   abortSession: (id: string) => Promise<void>;
   saveThoughtRecord: (record: ThoughtRecord) => Promise<void>;
   updateThoughtRecord: (id: string, updates: Partial<ThoughtRecord>) => Promise<void>;
+  createCustomGoalLadder: (params: {
+    goalName: string;
+    goalDescription: string;
+    goalIcon: string;
+    startingLocation: string;
+    finalLocation: string;
+    safetySignals: string[];
+    identityStatement?: string;
+    steps: Array<{
+      name: string;
+      location_hint: string;
+      difficulty_value: number;
+      initial_suds_estimate: number;
+    }>;
+  }) => Promise<string>;
+  resetStepTarget: (stepId: string, newTarget: number) => Promise<void>;
 }
 
 export const useAgoraphobiaStore = create<AgoraphobiaState>()(
@@ -42,6 +67,7 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
       steps: [],
       sessions: [],
       thoughtRecords: [],
+      resets: [],
       activeSessionId: null,
       isInitialized: false,
 
@@ -96,6 +122,11 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
             post_emotions: JSON.parse(r.post_emotions || '[]'),
           }));
 
+          // Load resets
+          const resetsRes = await db.executeAsync(`SELECT value FROM kv_store WHERE key = ?`, ['agoraphobia_resets']);
+          const resetsRow = (resetsRes.rows as any)?._array?.[0];
+          const resets = resetsRow ? JSON.parse(resetsRow.value || '[]') : [];
+
           // Check for active session
           const activeSession = sessions.find((s: ExposureSession) => s.status === 'in_progress');
 
@@ -104,6 +135,7 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
             steps,
             sessions,
             thoughtRecords,
+            resets,
             activeSessionId: activeSession?.id || null,
             isInitialized: true,
           });
@@ -422,6 +454,76 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
         set((s) => ({
           thoughtRecords: s.thoughtRecords.map((r) => (r.id === id ? { ...r, ...updates } : r)),
         }));
+      },
+
+      createCustomGoalLadder: async (params) => {
+        const { steps, safetySignals, identityStatement, goalName, goalIcon, goalDescription } = params;
+
+        const newSteps: ExposureStep[] = steps.map((s, index) => ({
+          id: Math.random().toString(36).substring(7),
+          track: 'agoraphobia',
+          name: s.name,
+          description: index === 0 ? goalDescription : undefined,
+          location_hint: s.location_hint || undefined,
+          template_id: 'tpl_custom',
+          ladder_position: index,
+          initial_suds_estimate: s.initial_suds_estimate,
+          current_difficulty: s.difficulty_value,
+          baseline_difficulty: s.difficulty_value,
+          difficulty_unit: 'meters',
+          difficulty_value: s.difficulty_value,
+          mastery_count: 0,
+          is_mastered: false,
+          is_unlocked: index === 0,
+          safety_signals: safetySignals,
+          is_active: true,
+          created_at: new Date().toISOString(),
+        }));
+
+        for (const step of newSteps) {
+          await get().addStep(step);
+        }
+
+        if (identityStatement) {
+          await get().saveFearProfile({ identity_statement: identityStatement } as any);
+        }
+
+        return newSteps[0].id;
+      },
+
+      resetStepTarget: async (stepId: string, newTarget: number) => {
+        const step = get().steps.find(s => s.id === stepId);
+        if (!step) return;
+
+        // 1. Update the step's difficulty_value to newTarget, resets mastery_count to 0, sets is_mastered = false.
+        await get().updateStep(stepId, {
+          difficulty_value: newTarget,
+          mastery_count: 0,
+          is_mastered: false,
+        });
+
+        // 2. Write a row to kv_store to mark the reset event.
+        // E.g., push to a JSON array of reset events for the step.
+        const eventId = Math.random().toString(36).substring(7);
+        const resetEvent = {
+          id: eventId,
+          step_id: stepId,
+          timestamp: new Date().toISOString(),
+          new_target: newTarget,
+          previous_target: step.difficulty_value,
+        };
+
+        const res = await db.executeAsync(`SELECT value FROM kv_store WHERE key = ?`, ['agoraphobia_resets']);
+        const row = (res.rows as any)?._array?.[0];
+        const existingResets = row ? JSON.parse(row.value || '[]') : [];
+        existingResets.push(resetEvent);
+
+        await db.executeAsync(`INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)`, [
+          'agoraphobia_resets',
+          JSON.stringify(existingResets),
+        ]);
+        
+        set({ resets: existingResets });
       },
     }),
     {

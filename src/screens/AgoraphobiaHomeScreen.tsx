@@ -53,9 +53,18 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
             <Text style={styles.headerTitle}>Exposure Therapy</Text>
             <Text style={styles.headerSubtitle}>1% further, every session</Text>
           </View>
-          <Pressable onPress={() => navigation.navigate('AgoraphobiaStats')} hitSlop={12}>
-            <Icon name="bar-chart-2" size={24} color={Colors.textSecondary} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable 
+              onPress={() => navigation.navigate('ExposureLadder', { initialShowTemplates: true })} 
+              hitSlop={12}
+              style={styles.addBtn}
+            >
+              <Icon name="plus" size={26} color={Colors.brand} />
+            </Pressable>
+            <Pressable onPress={() => navigation.navigate('AgoraphobiaStats')} hitSlop={12}>
+              <Icon name="bar-chart-2" size={24} color={Colors.textSecondary} />
+            </Pressable>
+          </View>
         </View>
 
         {/* Progress Ladder */}
@@ -125,11 +134,30 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
 
               {/* Projection */}
               {projection && (
-                <View style={styles.projectionRow}>
-                  <Icon name="trending-up" size={14} color={Colors.brand} />
-                  <Text style={styles.projectionText}>
-                    At 30 sessions → {projection.at30} {currentStep.difficulty_unit}
-                  </Text>
+                <View style={styles.visionContainer}>
+                  <View style={styles.visionHeader}>
+                    <Icon name="trending-up" size={14} color={Colors.brand} />
+                    <Text style={styles.visionHeaderText}>1% compounding vision</Text>
+                  </View>
+                  <View style={styles.visionTierPrimary}>
+                    <Text style={styles.visionTierLabel}>In 1 Year</Text>
+                    <View style={styles.visionTierPrimaryValueRow}>
+                      <Text style={styles.visionTierPrimaryValue}>{projection.at365}</Text>
+                      <Text style={styles.visionTierPrimaryUnit}>{currentStep.difficulty_unit}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.visionDivider} />
+                  <View style={styles.visionSecondaryRow}>
+                    <View style={styles.visionSecondaryItem}>
+                      <Text style={styles.visionSecondaryLabel}>90 Days</Text>
+                      <Text style={styles.visionSecondaryValue}>{projection.at90} {currentStep.difficulty_unit}</Text>
+                    </View>
+                    <View style={styles.visionSecondaryDivider} />
+                    <View style={styles.visionSecondaryItem}>
+                      <Text style={styles.visionSecondaryLabel}>30 Days</Text>
+                      <Text style={styles.visionSecondaryValue}>{projection.at30} {currentStep.difficulty_unit}</Text>
+                    </View>
+                  </View>
                 </View>
               )}
             </Pressable>
@@ -216,6 +244,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.m,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.m,
+  },
+  addBtn: {
+    padding: Spacing.xs,
   },
   headerTitle: {
     ...Typography.h1,
@@ -317,20 +353,81 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: Colors.borderLight,
   },
-  projectionRow: {
+  visionContainer: {
+    backgroundColor: Colors.brandLight,
+    borderRadius: 16,
+    padding: Spacing.m,
+    marginTop: Spacing.l,
+    borderWidth: 1,
+    borderColor: Colors.brand + '20',
+  },
+  visionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
-    marginTop: Spacing.m,
-    backgroundColor: Colors.brandLight,
-    paddingVertical: Spacing.s,
-    paddingHorizontal: Spacing.m,
-    borderRadius: 10,
+    marginBottom: Spacing.s,
   },
-  projectionText: {
+  visionHeaderText: {
     ...Typography.caption,
     color: Colors.brand,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  visionTierPrimary: {
+    alignItems: 'center',
+    paddingVertical: Spacing.xs,
+  },
+  visionTierLabel: {
+    ...Typography.micro,
+    color: Colors.textSecondary,
     fontWeight: '600',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  visionTierPrimaryValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+  },
+  visionTierPrimaryValue: {
+    ...Typography.heading,
+    fontSize: 28,
+    color: Colors.brand,
+  },
+  visionTierPrimaryUnit: {
+    ...Typography.label,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  visionDivider: {
+    height: 1,
+    backgroundColor: Colors.brand + '15',
+    marginVertical: Spacing.s,
+  },
+  visionSecondaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  visionSecondaryItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  visionSecondaryLabel: {
+    ...Typography.micro,
+    color: Colors.textTertiary,
+    marginBottom: 2,
+  },
+  visionSecondaryValue: {
+    ...Typography.body,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  visionSecondaryDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: Colors.brand + '15',
   },
   actionsRow: {
     flexDirection: 'row',
