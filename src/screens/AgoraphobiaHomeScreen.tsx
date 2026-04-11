@@ -1,16 +1,20 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import { Layout } from '../components/ui/Layout';
 import { ProgressLadder } from '../components/agoraphobia/ProgressLadder';
-import { CrisisButton } from '../components/agoraphobia/CrisisButton';
+import { AIInsightCard } from '../components/agoraphobia/AIInsightCard';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
 import { projectExposureDifficulty } from '../engine/agoraphobiaEngine';
+import { getMilestoneSummary, MILESTONE_COUNTS } from '../services/AIProgressInsightsService';
 import { Colors, Typography, Spacing, Shadows } from '../theme';
 
 export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
   const { fearProfile, steps, sessions, thoughtRecords, initialize, isInitialized } = useAgoraphobiaStore();
+
+  const [milestoneSummary, setMilestoneSummary] = useState('');
+  const [milestoneCount, setMilestoneCount] = useState(0);
 
   useEffect(() => {
     if (!isInitialized) initialize();
@@ -21,6 +25,33 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
       navigation.replace('FearProfileOnboarding');
     }
   }, [isInitialized, fearProfile]);
+
+  // Check if we're at a milestone and generate summary
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    if (thoughtRecords.length === 0) {
+      setMilestoneSummary("Your thought journal is a powerful tool for recovery. Whenever you feel anxious, try recording your thoughts to challenge them. Each entry is a step toward freedom.");
+      setMilestoneCount(0);
+      return;
+    }
+
+    const count = thoughtRecords.length;
+    // Find the highest milestone reached
+    const reached = MILESTONE_COUNTS.filter(m => count >= m);
+    const highestMilestone = reached.length > 0 ? reached[reached.length - 1] : 0;
+    
+    // Only fetch new summary if we moved to a new milestone bracket
+    if (highestMilestone > 0 && highestMilestone !== milestoneCount) {
+      setMilestoneCount(highestMilestone);
+      getMilestoneSummary(thoughtRecords, fearProfile).then(setMilestoneSummary);
+    } else if (highestMilestone === 0) {
+      // If we have records but haven't hit the first milestone yet,
+      // show a simple encouragement message.
+      setMilestoneSummary("You're off to a great start. Keep capturing your thoughts to reveal patterns and build your resilience.");
+      setMilestoneCount(0);
+    }
+  }, [isInitialized, thoughtRecords.length]);
 
   const currentStep = useMemo(
     () => steps.find(s => s.is_unlocked && !s.is_mastered) || steps[0],
@@ -41,6 +72,8 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
     () => currentStep ? projectExposureDifficulty(currentStep.difficulty_value, currentStep.difficulty_unit) : null,
     [currentStep]
   );
+
+
 
   if (!isInitialized || !fearProfile) return null;
 
@@ -65,6 +98,18 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
               style={styles.addBtn}
             >
               <Icon name="plus" size={26} color={Colors.brand} />
+            </Pressable>
+            <Pressable
+              onPress={() => navigation.navigate('ThoughtJournal')}
+              hitSlop={12}
+              style={styles.journalBtn}
+            >
+              <Icon name="book-open" size={20} color={Colors.surface} />
+              {thoughtRecords.length > 0 && (
+                <View style={styles.journalBadge}>
+                  <Text style={styles.journalBadgeText}>{thoughtRecords.length}</Text>
+                </View>
+              )}
             </Pressable>
             <Pressable onPress={() => navigation.navigate('AgoraphobiaStats')} hitSlop={12}>
               <Icon name="bar-chart-2" size={24} color={Colors.textSecondary} />
@@ -204,6 +249,19 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
             <Text style={styles.actionSub}>Retrospective</Text>
           </Pressable>
         </Animated.View>
+
+        {/* ──── AI Milestone Summary ──── */}
+        {milestoneSummary ? (
+          <Animated.View entering={FadeInDown.delay(450)} style={styles.insightSection}>
+            <AIInsightCard
+              type="milestone"
+              message={milestoneSummary}
+              milestoneCount={milestoneCount}
+            />
+          </Animated.View>
+        ) : null}
+
+
 
         {/* Empty state */}
         {steps.length === 0 && (
@@ -460,6 +518,38 @@ const styles = StyleSheet.create({
     ...Typography.micro,
     color: Colors.textTertiary,
     marginTop: 1,
+  },
+  // AI Insight Section
+  insightSection: {
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.l,
+  },
+  journalBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.purple,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  journalBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.amber,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  journalBadgeText: {
+    ...Typography.micro,
+    color: Colors.surface,
+    fontWeight: '900',
+    fontSize: 9,
   },
   emptyCard: {
     backgroundColor: Colors.surface,

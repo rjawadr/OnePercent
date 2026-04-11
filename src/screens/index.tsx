@@ -12,6 +12,7 @@ export * from './ExposureLadderScreen';
 export * from './ActiveSessionScreen';
 export * from './SessionReviewScreen';
 export * from './ThoughtRecordScreen';
+export * from './ThoughtJournalScreen';
 export * from './AgoraphobiaStatsScreen';
 export * from './CustomGoalSetupScreen';
 export * from './CustomGoalReviewScreen';

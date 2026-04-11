@@ -17,6 +17,7 @@ import {
   ActiveSessionScreen,
   SessionReviewScreen,
   ThoughtRecordScreen,
+  ThoughtJournalScreen,
   AgoraphobiaStatsScreen,
   CustomGoalSetupScreen,
   CustomGoalReviewScreen,
@@ -54,6 +55,7 @@ const TherapyStack = () => (
     <TherapyStackNav.Screen name="ActiveSession" component={ActiveSessionScreen} options={{ gestureEnabled: true }} />
     <TherapyStackNav.Screen name="SessionReview" component={SessionReviewScreen} options={{ gestureEnabled: true }} />
     <TherapyStackNav.Screen name="ThoughtRecord" component={ThoughtRecordScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="ThoughtJournal" component={ThoughtJournalScreen} options={{ gestureEnabled: true }} />
     <TherapyStackNav.Screen name="AgoraphobiaStats" component={AgoraphobiaStatsScreen} options={{ gestureEnabled: true }} />
     <TherapyStackNav.Screen name="CustomGoalSetup" component={CustomGoalSetupScreen} options={{ gestureEnabled: true }} />
     <TherapyStackNav.Screen name="CustomGoalReview" component={CustomGoalReviewScreen} options={{ gestureEnabled: true }} />

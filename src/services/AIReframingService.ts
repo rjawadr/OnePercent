@@ -5,7 +5,24 @@
  */
 import { Config } from '../config/env';
 
-const API_TIMEOUT = 15000;
+const API_TIMEOUT = 30000;
+
+async function fetchWithRetry(url: string, options: any, retries = 3, backoff = 2000): Promise<Response> {
+  try {
+    const res = await fetch(url, options);
+    if (res.status === 429 && retries > 0) {
+      await new Promise(resolve => setTimeout(() => resolve(null), backoff));
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    return res;
+  } catch (err) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(() => resolve(null), backoff));
+      return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    }
+    throw err;
+  }
+}
 
 export async function getAIReframe(
   automaticThought: string,
@@ -22,7 +39,7 @@ export async function getAIReframe(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), API_TIMEOUT);
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetchWithRetry('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,12 +48,12 @@ export async function getAIReframe(
         'X-Title': '1% Discipline',
       },
       body: JSON.stringify({
-        model: 'google/gemma-4-31b-it',
+        model: 'google/gemini-2.0-flash-001',
         max_tokens: 200,
         messages: [
           {
             role: 'system',
-            content: `You are a CBT coach inside a wellness app for agoraphobia recovery. Your tone is warm, direct, and non-clinical. Write under 80 words. Never start with "I understand" or a compliment. Focus only on the reframe. This is a wellness tool, not therapy.${profileContext}`,
+            content: `You are a CBT coach inside a wellness app for agoraphobia recovery. Your tone is warm, direct, and non-clinical. Write under 80 words. Never start with "I understand" or a compliment. Focus only on the reframe. Do not use any Markdown formatting or asterisks. This is a wellness tool, not therapy.${profileContext}`,
           },
           {
             role: 'user',
@@ -56,8 +73,9 @@ export async function getAIReframe(
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content || '';
-    return text.trim();
+    return text.replace(/\*/g, '').trim();
   } catch (e: any) {
+    console.error('[AIReframingService] Error:', e?.message || e);
     if (e.name === 'AbortError') {
       return 'Request timed out. Please check your connection and try again.';
     }

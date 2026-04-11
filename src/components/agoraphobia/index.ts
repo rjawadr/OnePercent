@@ -5,3 +5,5 @@ export { ProgressLadder } from './ProgressLadder';
 export { SessionTimer } from './SessionTimer';
 export { MasteryBadge, MasteryOverlay } from './MasteryBadge';
 export { FearProfileChip, AddChipButton } from './FearProfileChip';
+export { ThoughtRecordCard } from './ThoughtRecordCard';
+export { AIInsightCard } from './AIInsightCard';

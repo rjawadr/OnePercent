@@ -42,6 +42,7 @@ interface AgoraphobiaState {
   abortSession: (id: string) => Promise<void>;
   saveThoughtRecord: (record: ThoughtRecord) => Promise<void>;
   updateThoughtRecord: (id: string, updates: Partial<ThoughtRecord>) => Promise<void>;
+  deleteThoughtRecord: (id: string) => Promise<void>;
   createCustomGoalLadder: (params: {
     goalName: string;
     goalDescription: string;
@@ -458,7 +459,14 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
           id,
         ]);
         set((s) => ({
-          thoughtRecords: s.thoughtRecords.map((r) => (r.id === id ? { ...r, ...updates } : r)),
+          thoughtRecords: s.thoughtRecords.map((r) => (r.id === id ? { ...r, ...updates, updated_at: new Date().toISOString() } : r)),
+        }));
+      },
+
+      deleteThoughtRecord: async (id) => {
+        await db.executeAsync('DELETE FROM thought_records WHERE id=?', [id]);
+        set((s) => ({
+          thoughtRecords: s.thoughtRecords.filter((r) => r.id !== id),
         }));
       },
 

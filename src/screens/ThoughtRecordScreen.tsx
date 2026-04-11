@@ -1,18 +1,20 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, Alert,
+  KeyboardAvoidingView, Platform, Alert, Modal,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { FearProfileChip } from '../components/agoraphobia/FearProfileChip';
+import { AIInsightCard } from '../components/agoraphobia/AIInsightCard';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
 import { generateId, is7ColUnlocked } from '../engine/agoraphobiaEngine';
 import { getAIReframe } from '../services/AIReframingService';
+import { getQuickSaveTip, getMilestoneSummary, isMilestone } from '../services/AIProgressInsightsService';
 import { ThoughtRecord, EmotionEntry } from '../models/ThoughtRecord';
-import { Colors, Typography, Spacing } from '../theme';
+import { Colors, Typography, Spacing, Shadows } from '../theme';
 
 const DISTORTIONS = [
   'Catastrophizing', 'Mind Reading', 'Fortune Telling',
@@ -27,9 +29,12 @@ const EMOTIONS = [
   'Angry', 'Relieved', 'Proud', 'Calm',
 ];
 
+const post_emotions_exist = (pe: EmotionEntry[]) => pe && pe.length > 0;
+
 export const ThoughtRecordScreen = ({ navigation, route }: any) => {
-  const { sessionId } = route.params || {};
-  const { thoughtRecords, fearProfile, saveThoughtRecord } = useAgoraphobiaStore();
+  const { viewRecordId, sessionId } = route.params || {};
+  const { thoughtRecords, fearProfile, saveThoughtRecord, deleteThoughtRecord, updateThoughtRecord } = useAgoraphobiaStore();
+  const isReviewMode = !!viewRecordId;
   const show7Col = is7ColUnlocked(thoughtRecords.length);
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -46,6 +51,32 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
   const [contradictingFacts, setContradictingFacts] = useState('');
   const [balanced, setBalanced] = useState('');
   const [postEmotions, setPostEmotions] = useState<EmotionEntry[]>([]);
+
+  // AI Insight modal state
+  const [insightVisible, setInsightVisible] = useState(false);
+  const [insightTip, setInsightTip] = useState('');
+  const [insightMilestone, setInsightMilestone] = useState('');
+  const [insightMilestoneCount, setInsightMilestoneCount] = useState(0);
+
+  // Load existing record
+  React.useEffect(() => {
+    if (viewRecordId) {
+      const record = thoughtRecords.find(r => r.id === viewRecordId);
+      if (record) {
+        setSituation(record.situation || '');
+        setBodySensations(record.body_sensations || '');
+        setEmotions(record.emotions || []);
+        setAutoThoughts(record.automatic_thoughts || '');
+        setDistortions(record.cognitive_distortions || []);
+        setAltResponse(record.alternative_response || '');
+        setAiResponse(record.ai_suggested_response || '');
+        setSupportingFacts(record.supporting_facts || '');
+        setContradictingFacts(record.contradicting_facts || '');
+        setBalanced(record.balanced_perspective || '');
+        setPostEmotions(record.post_emotions || []);
+      }
+    }
+  }, [viewRecordId]);
 
   const toggleEmotion = useCallback((name: string, list: EmotionEntry[], setter: (v: EmotionEntry[]) => void) => {
     const exists = list.find(e => e.name === name);
@@ -75,31 +106,72 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
     }
     setLoading(true);
     try {
-      const record: ThoughtRecord = {
-        id: generateId(),
-        session_id: sessionId,
-        format: show7Col ? '7col' : '5col',
-        date: new Date().toISOString(),
-        situation,
-        body_sensations: bodySensations,
-        emotions,
-        automatic_thoughts: autoThoughts,
-        cognitive_distortions: distortions,
-        alternative_response: altResponse,
-        ai_suggested_response: aiResponse || undefined,
-        supporting_facts: show7Col ? supportingFacts : undefined,
-        contradicting_facts: show7Col ? contradictingFacts : undefined,
-        balanced_perspective: show7Col ? balanced : undefined,
-        post_emotions: postEmotions,
-        created_at: new Date().toISOString(),
-      };
-      await saveThoughtRecord(record);
-      navigation.goBack();
+      if (isReviewMode) {
+        await updateThoughtRecord(viewRecordId, {
+          situation,
+          body_sensations: bodySensations,
+          emotions,
+          automatic_thoughts: autoThoughts,
+          cognitive_distortions: distortions,
+          alternative_response: altResponse,
+          ai_suggested_response: aiResponse || undefined,
+          supporting_facts: show7Col ? supportingFacts : undefined,
+          contradicting_facts: show7Col ? contradictingFacts : undefined,
+          balanced_perspective: show7Col ? balanced : undefined,
+          post_emotions: postEmotions,
+        });
+        navigation.goBack();
+      } else {
+        const record: ThoughtRecord = {
+          id: generateId(),
+          session_id: sessionId,
+          format: show7Col ? '7col' : '5col',
+          date: new Date().toISOString(),
+          situation,
+          body_sensations: bodySensations,
+          emotions,
+          automatic_thoughts: autoThoughts,
+          cognitive_distortions: distortions,
+          alternative_response: altResponse,
+          ai_suggested_response: aiResponse || undefined,
+          supporting_facts: show7Col ? supportingFacts : undefined,
+          contradicting_facts: show7Col ? contradictingFacts : undefined,
+          balanced_perspective: show7Col ? balanced : undefined,
+          post_emotions: postEmotions,
+          created_at: new Date().toISOString(),
+        };
+        await saveThoughtRecord(record);
+
+        // Generate AI insights after saving
+        const newCount = thoughtRecords.length + 1;
+        const allRecords = [record, ...thoughtRecords];
+
+        // Always get a quick tip
+        const tip = await getQuickSaveTip(record, allRecords, fearProfile);
+        setInsightTip(tip);
+
+        // Check for milestone
+        if (isMilestone(newCount)) {
+          const summary = await getMilestoneSummary(allRecords, fearProfile);
+          setInsightMilestone(summary);
+          setInsightMilestoneCount(newCount);
+        } else {
+          setInsightMilestone('');
+          setInsightMilestoneCount(0);
+        }
+
+        setInsightVisible(true);
+      }
     } catch (e) {
       Alert.alert('Error', 'Failed to save.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDismissInsight = () => {
+    setInsightVisible(false);
+    navigation.goBack();
   };
 
   return (
@@ -109,9 +181,36 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
           <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
             <Icon name="arrow-left" size={24} color={Colors.textPrimary} />
           </Pressable>
-          <Text style={styles.topTitle}>Thought Record</Text>
-          <View style={styles.formatBadge}>
-            <Text style={styles.formatText}>{show7Col ? '7-COL' : '5-COL'}</Text>
+          <Text style={styles.topTitle}>{isReviewMode ? 'Review Record' : 'Thought Record'}</Text>
+          <View style={styles.topActions}>
+            {isReviewMode && (
+              <Pressable 
+                onPress={() => {
+                  Alert.alert(
+                    "Delete Record", 
+                    "Are you sure you want to delete this session from your history?",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      { 
+                        text: "Delete", 
+                        style: "destructive", 
+                        onPress: async () => {
+                          await deleteThoughtRecord(viewRecordId);
+                          navigation.goBack();
+                        }
+                      }
+                    ]
+                  );
+                }} 
+                hitSlop={12}
+                style={styles.deleteBtn}
+              >
+                <Icon name="trash-2" size={20} color={Colors.error} />
+              </Pressable>
+            )}
+            <View style={styles.formatBadge}>
+              <Text style={styles.formatText}>{show7Col ? '7-COL' : '5-COL'}</Text>
+            </View>
           </View>
         </View>
 
@@ -122,6 +221,35 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
           bounces={false}
           overScrollMode="never"
         >
+          {isReviewMode && (
+            <Animated.View entering={FadeInDown.delay(100)} style={styles.reviewSummary}>
+              <View style={styles.reviewHeader}>
+                <Icon name="activity" size={20} color={Colors.brand} />
+                <Text style={styles.reviewTitle}>Session Reflection</Text>
+              </View>
+              <Text style={styles.reviewText}>
+                You recorded this thought on {new Date(thoughtRecords.find(r => r.id === viewRecordId)?.date || '').toLocaleDateString()}. 
+                Reviewing past patterns helps build long-term cognitive flexibility.
+              </Text>
+              
+              {/* Emotion Contrast */}
+              {emotions.length > 0 && post_emotions_exist(postEmotions) && (
+                <View style={styles.emotionContrast}>
+                  <View style={styles.contrastItem}>
+                    <Text style={styles.contrastLabel}>INITIAL</Text>
+                    <Text style={styles.contrastValue}>{emotions[0].name}</Text>
+                  </View>
+                  <Icon name="chevrons-right" size={20} color={Colors.textTertiary} />
+                  <View style={styles.contrastItem}>
+                    <Text style={styles.contrastLabel}>POST-REFRAME</Text>
+                    <Text style={[styles.contrastValue, { color: Colors.brand }]}>
+                      {postEmotions.length > 0 ? postEmotions[0].name : 'Calmer'}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </Animated.View>
+          )}
 
           {/* 1. Situation */}
           <Section title="1. Situation" hint="What happened? Where were you?">
@@ -205,9 +333,51 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
             </View>
           )}
 
-          <Button title="Save Record" onPress={handleSave} loading={loading} style={{ marginTop: Spacing.l }} />
+          <Button 
+            title={isReviewMode ? "Update Changes" : "Save Record"} 
+            onPress={handleSave} 
+            loading={loading} 
+            style={{ marginTop: Spacing.l }} 
+          />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* AI Insight Modal — shown after save */}
+      <Modal
+        visible={insightVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={handleDismissInsight}
+      >
+        <Pressable style={styles.insightOverlay} onPress={handleDismissInsight}>
+          <View style={styles.insightContainer}>
+            {/* Success checkmark */}
+            <Animated.View entering={FadeInDown.duration(300)} style={styles.successCircle}>
+              <Icon name="check" size={28} color={Colors.brand} />
+            </Animated.View>
+            <Text style={styles.savedTitle}>Record Saved</Text>
+
+            {/* Quick Tip — always shown */}
+            {insightTip ? (
+              <AIInsightCard type="tip" message={insightTip} />
+            ) : null}
+
+            {/* Milestone Summary — shown at milestones */}
+            {insightMilestone ? (
+              <AIInsightCard
+                type="milestone"
+                message={insightMilestone}
+                milestoneCount={insightMilestoneCount}
+              />
+            ) : null}
+
+            <Pressable onPress={handleDismissInsight} style={styles.dismissBtn}>
+              <Text style={styles.dismissText}>Continue →</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </Layout>
   );
 };
@@ -224,6 +394,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.xl, paddingVertical: Spacing.m },
   topTitle: { ...Typography.heading, color: Colors.textPrimary },
+  topActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.m },
+  deleteBtn: { padding: 4 },
   formatBadge: { backgroundColor: Colors.brandLight, paddingVertical: 3, paddingHorizontal: Spacing.s, borderRadius: 8 },
   formatText: { ...Typography.micro, color: Colors.brand },
   scroll: { paddingHorizontal: Spacing.xl, paddingBottom: 120 },
@@ -242,4 +414,99 @@ const styles = StyleSheet.create({
   useText: { ...Typography.caption, color: Colors.brand, fontWeight: '700' },
   unlockHint: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, justifyContent: 'center', paddingVertical: Spacing.m },
   unlockText: { ...Typography.caption, color: Colors.textTertiary },
+  // AI Insight Modal
+  insightOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  insightContainer: {
+    backgroundColor: Colors.background,
+    borderRadius: 24,
+    padding: Spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    gap: 16,
+    alignItems: 'center',
+  },
+  successCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.brandLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.brand + '30',
+  },
+  savedTitle: {
+    ...Typography.heading,
+    color: Colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  dismissBtn: {
+    backgroundColor: Colors.brand,
+    paddingVertical: Spacing.m,
+    paddingHorizontal: Spacing.xxl,
+    borderRadius: 99,
+    marginTop: 4,
+  },
+  dismissText: {
+    color: Colors.surface,
+    fontWeight: '800',
+    fontSize: 15,
+  },
+  // Review Mode Styles
+  reviewSummary: {
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: Spacing.l,
+    marginBottom: Spacing.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadows.soft,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: Spacing.s,
+  },
+  reviewTitle: {
+    ...Typography.label,
+    color: Colors.textPrimary,
+    fontWeight: '800',
+  },
+  reviewText: {
+    ...Typography.body,
+    color: Colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emotionContrast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.brandLight,
+    padding: Spacing.m,
+    borderRadius: 12,
+    marginTop: Spacing.m,
+  },
+  contrastItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  contrastLabel: {
+    ...Typography.micro,
+    color: Colors.textTertiary,
+    marginBottom: 4,
+  },
+  contrastValue: {
+    ...Typography.label,
+    color: Colors.textPrimary,
+    fontWeight: '800',
+  },
 });
