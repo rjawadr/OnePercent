@@ -33,9 +33,14 @@ export const SessionReviewScreen = ({ navigation, route }: any) => {
 
   return (
     <Layout>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scroll} 
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
+      >
         <Animated.View entering={FadeInDown.delay(100)} style={styles.banner}>
-          <Animated.View entering={ZoomIn.delay(300).springify()}>
+          <Animated.View entering={ZoomIn.delay(300).duration(400)}>
             <View style={[styles.icon, mastered ? styles.iconMastered : styles.iconProgress]}>
               <Icon name={mastered ? 'award' : 'trending-up'} size={36} color={mastered ? Colors.brand : Colors.amber} />
             </View>

@@ -16,18 +16,18 @@ interface SettingsRowProps {
   switchValue?: boolean;
 }
 
-const SettingsRow = ({ 
-  icon, 
-  label, 
-  onPress, 
-  color = Colors.brand, 
+const SettingsRow = ({
+  icon,
+  label,
+  onPress,
+  color = Colors.brand,
   value,
   showSwitch,
   switchValue
 }: SettingsRowProps) => (
-  <TouchableOpacity 
-    style={styles.row} 
-    onPress={onPress} 
+  <TouchableOpacity
+    style={styles.row}
+    onPress={onPress}
     activeOpacity={0.7}
     disabled={showSwitch}
   >
@@ -35,12 +35,12 @@ const SettingsRow = ({
       <Icon name={icon} size={20} color={color} />
     </View>
     <View style={styles.labelWrapper}>
-       <Text style={styles.label}>{label}</Text>
-       {value && <Text style={styles.value}>{value}</Text>}
+      <Text style={styles.label}>{label}</Text>
+      {value && <Text style={styles.value}>{value}</Text>}
     </View>
     {showSwitch ? (
-      <Switch 
-        value={switchValue} 
+      <Switch
+        value={switchValue}
         onValueChange={() => onPress()}
         trackColor={{ false: Colors.border, true: Colors.brand }}
         thumbColor={Colors.surface}
@@ -57,9 +57,11 @@ export const SettingsScreen = () => {
 
   return (
     <Layout style={styles.container}>
-      <ScrollView 
-        showsVerticalScrollIndicator={false} 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
+        bounces={false}
+        overScrollMode="never"
       >
         <View style={styles.header}>
           <Text style={styles.title}>Settings</Text>
@@ -69,16 +71,16 @@ export const SettingsScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Habits & Tracking</Text>
           <View style={styles.card}>
-            <SettingsRow 
-              icon="format-list-bulleted" 
-              label="Manager" 
-              onPress={() => navigation.navigate('HabitManager')} 
+            <SettingsRow
+              icon="format-list-bulleted"
+              label="Manager"
+              onPress={() => navigation.navigate('HabitManager')}
             />
             <View style={styles.divider} />
-            <SettingsRow 
-              icon="cloud-sync" 
-              label="Sync Status" 
-              onPress={() => {}} 
+            <SettingsRow
+              icon="cloud-sync"
+              label="Sync Status"
+              onPress={() => { }}
               color={Colors.textSecondary}
               value="Cloud Backup Active"
             />
@@ -86,27 +88,40 @@ export const SettingsScreen = () => {
         </View>
 
         <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Safety & Support</Text>
+          <View style={styles.card}>
+            <SettingsRow
+              icon="shield-account"
+              label="Safety Profile"
+              onPress={() => navigation.navigate('FearProfile')}
+              color={Colors.brand}
+              value="Manage emergency contacts"
+            />
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <Text style={styles.sectionTitle}>Experience</Text>
           <View style={styles.card}>
-            <SettingsRow 
-              icon="palette" 
-              label="Theme" 
-              onPress={() => {}} 
+            <SettingsRow
+              icon="palette"
+              label="Theme"
+              onPress={() => { }}
               value="System"
             />
             <View style={styles.divider} />
-            <SettingsRow 
-              icon="bell-ring" 
-              label="Reminders" 
-              onPress={() => {}} 
+            <SettingsRow
+              icon="bell-ring"
+              label="Reminders"
+              onPress={() => { }}
               showSwitch
               switchValue={true}
             />
-             <View style={styles.divider} />
-            <SettingsRow 
-              icon="vibrate" 
-              label="Haptic Feedback" 
-              onPress={() => {}} 
+            <View style={styles.divider} />
+            <SettingsRow
+              icon="vibrate"
+              label="Haptic Feedback"
+              onPress={() => { }}
               showSwitch
               switchValue={true}
             />
@@ -116,23 +131,23 @@ export const SettingsScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>The Discipline Lab</Text>
           <View style={styles.card}>
-            <SettingsRow 
-              icon="star" 
-              label="Rate OnePercent" 
-              onPress={() => {}} 
+            <SettingsRow
+              icon="star"
+              label="Rate OnePercent"
+              onPress={() => { }}
               color={Colors.gold}
             />
             <View style={styles.divider} />
-            <SettingsRow 
-              icon="github" 
-              label="Source & Feedback" 
-              onPress={() => {}} 
+            <SettingsRow
+              icon="github"
+              label="Source & Feedback"
+              onPress={() => { }}
             />
             <View style={styles.divider} />
-             <SettingsRow 
-              icon="shield-check" 
-              label="Privacy Policy" 
-              onPress={() => {}} 
+            <SettingsRow
+              icon="shield-check"
+              label="Privacy Policy"
+              onPress={() => { }}
             />
           </View>
         </View>

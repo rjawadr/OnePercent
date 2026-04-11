@@ -121,11 +121,27 @@ export const initDb = async () => {
         emergency_contact_number TEXT,
         crisis_helpline_name TEXT,
         crisis_helpline_number TEXT,
+        identity_statement TEXT,
         onboarding_completed INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
+
+    // 8a. Migration for fear_profiles
+    const fearProfileCols = [
+      { name: 'emergency_contact_name', type: 'TEXT' },
+      { name: 'emergency_contact_number', type: 'TEXT' },
+      { name: 'crisis_helpline_name', type: 'TEXT' },
+      { name: 'crisis_helpline_number', type: 'TEXT' },
+      { name: 'identity_statement', type: 'TEXT' },
+    ];
+
+    for (const col of fearProfileCols) {
+      try {
+        await db.executeAsync(`ALTER TABLE fear_profiles ADD COLUMN ${col.name} ${col.type};`);
+      } catch (e) {}
+    }
 
     // 9. Exposure Steps (Ladder)
     await db.executeAsync(`

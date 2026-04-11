@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
   interpolateColor,
   runOnJS,
 } from 'react-native-reanimated';
@@ -45,7 +45,7 @@ export const SUDSSlider = ({
 
   const handleTick = useCallback(
     (index: number) => {
-      progress.value = withSpring(index / 10, { damping: 20, stiffness: 300 });
+      progress.value = withTiming(index / 10, { duration: 250 });
       onChange(index);
     },
     [onChange, progress]

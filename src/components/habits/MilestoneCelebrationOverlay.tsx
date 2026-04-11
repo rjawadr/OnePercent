@@ -51,7 +51,7 @@ export const MilestoneCelebrationOverlay = ({ milestone, habit, onDismiss }: Mil
         <Confetti />
         
         <Animated.View 
-          entering={ZoomIn.delay(200).springify()} 
+          entering={ZoomIn.delay(200).duration(400)} 
           style={styles.card}
         >
           <View style={styles.iconContainer}>

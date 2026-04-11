@@ -156,7 +156,7 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
             `UPDATE fear_profiles SET 
               external_signals=?, internal_signals=?, feared_attacks=?, 
               feared_catastrophes=?, emergency_contact_name=?, emergency_contact_number=?, 
-              crisis_helpline_name=?, crisis_helpline_number=?, onboarding_completed=?, updated_at=? 
+              crisis_helpline_name=?, crisis_helpline_number=?, identity_statement=?, onboarding_completed=?, updated_at=? 
             WHERE id=?`,
             [
               stringify(merged.external_signals),
@@ -167,6 +167,7 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
               merged.emergency_contact_number ?? null,
               merged.crisis_helpline_name ?? null,
               merged.crisis_helpline_number ?? null,
+              merged.identity_statement ?? null,
               merged.onboarding_completed ? 1 : 0,
               now,
               existing.id,
@@ -175,14 +176,19 @@ export const useAgoraphobiaStore = create<AgoraphobiaState>()(
         } else {
           const id = generateId();
           await db.executeAsync(
-            `INSERT INTO fear_profiles (id, external_signals, internal_signals, feared_attacks, feared_catastrophes, onboarding_completed, created_at, updated_at) 
-             VALUES (?,?,?,?,?,?,?,?)`,
+            `INSERT INTO fear_profiles (id, external_signals, internal_signals, feared_attacks, feared_catastrophes, emergency_contact_name, emergency_contact_number, crisis_helpline_name, crisis_helpline_number, identity_statement, onboarding_completed, created_at, updated_at) 
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
             [
               id,
               stringify(merged.external_signals),
               stringify(merged.internal_signals),
               stringify(merged.feared_attacks),
               stringify(merged.feared_catastrophes),
+              merged.emergency_contact_name ?? null,
+              merged.emergency_contact_number ?? null,
+              merged.crisis_helpline_name ?? null,
+              merged.crisis_helpline_number ?? null,
+              merged.identity_statement ?? null,
               merged.onboarding_completed ? 1 : 0,
               now,
               now,

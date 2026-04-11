@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput, Pressable,
   KeyboardAvoidingView, Platform, Alert,
@@ -47,15 +47,15 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
   const [balanced, setBalanced] = useState('');
   const [postEmotions, setPostEmotions] = useState<EmotionEntry[]>([]);
 
-  const toggleEmotion = (name: string, list: EmotionEntry[], setter: (v: EmotionEntry[]) => void) => {
+  const toggleEmotion = useCallback((name: string, list: EmotionEntry[], setter: (v: EmotionEntry[]) => void) => {
     const exists = list.find(e => e.name === name);
     if (exists) setter(list.filter(e => e.name !== name));
     else setter([...list, { name, intensity: 50 }]);
-  };
+  }, []);
 
-  const toggleDistortion = (d: string) => {
+  const toggleDistortion = useCallback((d: string) => {
     setDistortions(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
-  };
+  }, []);
 
   const handleAIReframe = async () => {
     if (!autoThoughts.trim()) {
@@ -115,7 +115,13 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <ScrollView 
+          contentContainerStyle={styles.scroll} 
+          showsVerticalScrollIndicator={false} 
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+          overScrollMode="never"
+        >
 
           {/* 1. Situation */}
           <Section title="1. Situation" hint="What happened? Where were you?">
@@ -206,13 +212,13 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
   );
 };
 
-const Section = ({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) => (
+const Section = React.memo(({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) => (
   <View style={styles.section}>
     <Text style={styles.sectionTitle}>{title}</Text>
     <Text style={styles.sectionHint}>{hint}</Text>
     {children}
   </View>
-);
+));
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },

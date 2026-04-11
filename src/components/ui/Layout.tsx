@@ -9,9 +9,10 @@ const { width, height } = Dimensions.get('window');
 interface LayoutProps {
   children: React.ReactNode;
   style?: ViewStyle;
+  noTabBar?: boolean;
 }
 
-export const Layout = ({ children, style }: LayoutProps) => {
+export const Layout = ({ children, style, noTabBar = false }: LayoutProps) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -44,7 +45,11 @@ export const Layout = ({ children, style }: LayoutProps) => {
         </Svg>
       </View>
 
-      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom + 64 }}>
+      <View style={{ 
+        flex: 1, 
+        paddingTop: insets.top, 
+        paddingBottom: noTabBar ? Math.max(insets.bottom, 12) : 64 + Math.max(insets.bottom, 12) 
+      }}>
         {children}
       </View>
     </View>

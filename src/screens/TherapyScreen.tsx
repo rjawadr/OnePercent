@@ -60,6 +60,8 @@ export const TherapyScreen = ({ navigation }: any) => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
       >
         {/* Header */}
         <View style={styles.header}>
@@ -74,7 +76,7 @@ export const TherapyScreen = ({ navigation }: any) => {
           {TRACKS.map((track, index) => (
             <Animated.View
               key={track.id}
-              entering={FadeInDown.delay(index * 100).springify()}
+              entering={FadeInDown.delay(index * 100).duration(400)}
             >
               <Pressable
                 onPress={() => handleTrackPress(track.id, track.available)}

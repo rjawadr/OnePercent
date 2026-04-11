@@ -37,7 +37,7 @@ export function TodayHeader({ completedCount, totalCount, onPressStats, onPressA
 
   return (
     <Animated.View 
-      entering={SlideInUp.duration(800).springify().damping(15)} 
+      entering={SlideInUp.duration(600)} 
       style={styles.container}
     >
       <View style={styles.headerTop}>

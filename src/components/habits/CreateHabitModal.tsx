@@ -340,8 +340,8 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
           style={styles.keyboardView}
         >
           <Animated.View 
-            entering={FadeInUp.springify().damping(15)}
-            layout={Layout.springify()}
+            entering={FadeInUp.duration(400)}
+            layout={Layout.duration(300)}
             style={[styles.modalContent, { marginBottom: TAB_BAR_OFFSET }]}
           >
             <View style={styles.grabHandle} />
@@ -360,6 +360,8 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
               contentContainerStyle={styles.scrollContent}
+              bounces={false}
+              overScrollMode="never"
             >
               <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View>

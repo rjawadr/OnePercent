@@ -59,9 +59,9 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
   const [goalIcon, setGoalIcon] = useState('pencil');
   const [startingLocation, setStartingLocation] = useState('');
   const [finalLocation, setFinalLocation] = useState('');
-  
+
   const [steps, setSteps] = useState<StepInputData[]>([]);
-  
+
   const [isSafetyExpanded, setIsSafetyExpanded] = useState(false);
   const [safetySignals, setSafetySignals] = useState<string[]>(fearProfile?.external_signals || []);
 
@@ -69,18 +69,18 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
     if (!goalName.trim()) return false;
     if (!startingLocation.trim()) return false;
     if (steps.length === 0) return false;
-    
+
     // Check all steps are complete
     for (const step of steps) {
       if (!step.name.trim() || step.difficulty_value <= 0) return false;
     }
-    
+
     return true;
   }, [goalName, startingLocation, steps]);
 
   const addStep = () => {
     if (steps.length >= 10) return;
-    
+
     const newStep: StepInputData = {
       id: Math.random().toString(36).substring(7),
       name: '',
@@ -88,7 +88,7 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
       difficulty_value: 0,
       initial_suds_estimate: 5,
     };
-    
+
     setSteps([...steps, newStep]);
   };
 
@@ -101,7 +101,7 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
   };
 
   const toggleSafetySignal = (signal: string) => {
-    setSafetySignals(curr => 
+    setSafetySignals(curr =>
       curr.includes(signal) ? curr.filter(s => s !== signal) : [...curr, signal]
     );
   };
@@ -128,16 +128,32 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
           <Icon name="arrow-left" size={24} color={Colors.textPrimary} />
         </Pressable>
         <Text style={styles.topBarTitle}>Custom Goal</Text>
-        <View style={styles.iconPlaceholder}>
+        <Pressable
+          style={styles.iconPlaceholder}
+          onPress={() => {
+            if (isValid) {
+              navigation.navigate('CustomGoalReview', {
+                goalName,
+                goalDescription,
+                goalIcon,
+                startingLocation,
+                finalLocation,
+                steps,
+                safetySignals,
+              });
+            }
+          }}
+          disabled={!isValid}
+        >
           <Icon name="save" size={20} color={isValid ? Colors.brand : Colors.textTertiary} />
-        </View>
+        </Pressable>
       </View>
-      
+
       <View style={styles.stepIndicatorWrapper}>
         <StepIndicator currentStep={0} totalSteps={2} />
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
@@ -149,6 +165,8 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
           }}
           renderItem={renderStepItem}
           keyboardShouldPersistTaps="handled"
+          bounces={false}
+          overScrollMode="never"
           ListHeaderComponent={
             <View style={styles.sectionHeader}>
               <View style={styles.identitySection}>
@@ -188,10 +206,10 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
                         style={[styles.emojiBtn, goalIcon === iconName && styles.emojiBtnActive]}
                         onPress={() => setGoalIcon(iconName)}
                       >
-                        <MaterialCommunityIcons 
-                          name={iconName as any} 
-                          size={24} 
-                          color={goalIcon === iconName ? Colors.brand : Colors.textSecondary} 
+                        <MaterialCommunityIcons
+                          name={iconName as any}
+                          size={24}
+                          color={goalIcon === iconName ? Colors.brand : Colors.textSecondary}
                         />
                       </TouchableOpacity>
                     ))}
@@ -253,7 +271,7 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
                   Good start. Most programs have 4–6 steps.
                 </Animated.Text>
               )}
-              
+
               {steps.length < 10 ? (
                 <TouchableOpacity style={styles.addStepBtn} onPress={addStep}>
                   <Icon name="plus" size={18} color={Colors.surface} />
@@ -264,19 +282,19 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
               )}
 
               <View style={styles.safetySection}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.safetyHeaderRow}
                   onPress={() => setIsSafetyExpanded(!isSafetyExpanded)}
                 >
                   <Icon name={isSafetyExpanded ? "chevron-down" : "chevron-right"} size={20} color={Colors.textSecondary} />
                   <Text style={styles.safetyHeaderTitle}>Safety items (optional)</Text>
                 </TouchableOpacity>
-                
+
                 {isSafetyExpanded && (
                   <Animated.View entering={FadeInDown} style={styles.safetyContent}>
                     <Text style={styles.label}>What might you carry during sessions?</Text>
                     <Text style={styles.subtitle}>You'll choose what to bring before each session.</Text>
-                    
+
                     <View style={styles.chipRow}>
                       {AVAILABLE_SIGNALS.map(signal => {
                         const isSelected = safetySignals.includes(signal);
@@ -301,34 +319,6 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
           contentContainerStyle={styles.listContent}
         />
       </KeyboardAvoidingView>
-
-      <View style={styles.footer}>
-        <Button
-          title="Back"
-          type="secondary"
-          onPress={() => navigation.goBack()}
-          style={styles.footerBtn}
-        />
-        <Button
-          title="Review →"
-          type="primary"
-          onPress={() => {
-            if (isValid) {
-              navigation.navigate('CustomGoalReview', {
-                goalName,
-                goalDescription,
-                goalIcon,
-                startingLocation,
-                finalLocation,
-                steps,
-                safetySignals,
-              });
-            }
-          }}
-          style={styles.footerBtn}
-          disabled={!isValid}
-        />
-      </View>
     </Layout>
   );
 };
@@ -367,7 +357,7 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.l,
-    paddingBottom: 40,
+    paddingBottom: Spacing.xxl,
   },
   sectionHeader: {
     marginBottom: Spacing.m,
@@ -556,16 +546,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: Spacing.xl,
     paddingTop: Spacing.m,
-    paddingBottom: 110, // Increased to avoid overlap with absolute CustomTabBar
+    paddingBottom: Spacing.xl,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
     gap: Spacing.l,
+    ...Shadows.card, // Extra elevation for depth
   },
   footerBtn: {
     flex: 1,
   },
-  
+
   // Indicator Styles
   indicatorContainer: {
     flexDirection: 'row',

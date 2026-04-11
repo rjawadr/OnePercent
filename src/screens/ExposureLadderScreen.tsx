@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Animated as RNAnimated, Modal } from 'react-native';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, Alert, Animated as RNAnimated, Modal, FlatList } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -42,11 +42,10 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
     
     if (route.params?.showSuccessToast) {
       setShowToast(true);
-      RNAnimated.spring(toastAnim, {
+      RNAnimated.timing(toastAnim, {
         toValue: 1,
+        duration: 300,
         useNativeDriver: true,
-        tension: 60,
-        friction: 10,
       }).start();
       
       // Auto-dismiss after 4 seconds
@@ -59,11 +58,10 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
   }, [route.params]);
 
   const dismissToast = () => {
-    RNAnimated.spring(toastAnim, {
+    RNAnimated.timing(toastAnim, {
       toValue: 0,
+      duration: 250,
       useNativeDriver: true,
-      tension: 60,
-      friction: 12,
     }).start(() => {
       setShowToast(false);
     });
@@ -132,7 +130,7 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
 
   const [resetTargetStep, setResetTargetStep] = useState<ExposureStep | null>(null);
 
-  const handleStepOptions = (step: ExposureStep) => {
+  const handleStepOptions = useCallback((step: ExposureStep) => {
     Alert.alert(
       'Step Options',
       `Manage "${step.name}"`,
@@ -144,11 +142,71 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
         { text: 'Cancel', style: 'cancel' },
       ]
     );
-  };
+  }, []);
+
+  const renderTemplateItem = useCallback(({ item: t, index }: { item: ExposureTemplate; index: number }) => (
+    <Animated.View entering={FadeInDown.delay(index * 80)}>
+      <Pressable
+        onPress={() => handleSelectTemplate(t)}
+        style={({ pressed }) => [styles.templateCard, pressed && styles.pressed]}
+      >
+        <View style={styles.templateIconContainer}>
+          <MaterialCommunityIcons name={t.icon as any} size={28} color={Colors.brand} />
+        </View>
+        <View style={styles.templateContent}>
+          <Text style={styles.templateGoal}>{t.goal}</Text>
+          <Text style={styles.templateDesc}>{t.description}</Text>
+          {t.steps.length > 0 && (
+            <Text style={styles.templateStepCount}>
+              {t.steps.length} steps · SUDS {t.steps[0].initial_suds_estimate}–{t.steps[t.steps.length - 1].initial_suds_estimate}
+            </Text>
+          )}
+        </View>
+        <Icon name="chevron-right" size={20} color={Colors.textTertiary} />
+      </Pressable>
+    </Animated.View>
+  ), [handleSelectTemplate]);
+
+  const renderStepItem = useCallback(({ item: step, index }: { item: ExposureStep; index: number }) => (
+    <Animated.View key={step.id} entering={FadeInDown.delay(index * 50)}>
+      <ExposureStepCard
+        step={step}
+        sessionCount={sessionCounts[step.id] || 0}
+        isLocked={!step.is_unlocked}
+        isCurrent={step.id === currentStepId}
+        isHighlighted={step.id === highlightedStepId}
+        onPress={() => {
+          if (step.is_unlocked) {
+            navigation.navigate('ActiveSession', { stepId: step.id });
+          }
+        }}
+        onEdit={() => handleStepOptions(step)}
+      />
+    </Animated.View>
+  ), [sessionCounts, currentStepId, highlightedStepId, handleStepOptions, navigation]);
+
+  const templateHeader = useMemo(() => (
+    <Text style={styles.templateIntro}>
+      Pick a template to start your exposure ladder, or build one from scratch.
+    </Text>
+  ), []);
+
+  const ladderHeader = useMemo(() => (
+    steps.length > 0 ? (
+      <View style={styles.summaryRow}>
+        <Text style={styles.summaryText}>
+          {steps.filter(s => s.is_mastered).length}/{steps.length} mastered
+        </Text>
+        <Text style={styles.helpfulNote}>
+          Long press any step to reset its target
+        </Text>
+      </View>
+    ) : null
+  ), [steps]);
 
   if (showTemplates) {
     return (
-      <Layout>
+      <Layout noTabBar>
         <View style={styles.topBar}>
           <Pressable onPress={() => steps.length > 0 ? setShowTemplates(false) : navigation.goBack()} hitSlop={12}>
             <Icon name="arrow-left" size={24} color={Colors.textPrimary} />
@@ -157,40 +215,25 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
           <View style={{ width: 24 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Text style={styles.templateIntro}>
-            Pick a template to start your exposure ladder, or build one from scratch.
-          </Text>
-
-          {EXPOSURE_TEMPLATES.map((t, index) => (
-            <Animated.View key={t.id} entering={FadeInDown.delay(index * 80)}>
-              <Pressable
-                onPress={() => handleSelectTemplate(t)}
-                style={({ pressed }) => [styles.templateCard, pressed && styles.pressed]}
-              >
-                <View style={styles.templateIconContainer}>
-                  <MaterialCommunityIcons name={t.icon as any} size={28} color={Colors.brand} />
-                </View>
-                <View style={styles.templateContent}>
-                  <Text style={styles.templateGoal}>{t.goal}</Text>
-                  <Text style={styles.templateDesc}>{t.description}</Text>
-                  {t.steps.length > 0 && (
-                    <Text style={styles.templateStepCount}>
-                      {t.steps.length} steps · SUDS {t.steps[0].initial_suds_estimate}–{t.steps[t.steps.length - 1].initial_suds_estimate}
-                    </Text>
-                  )}
-                </View>
-                <Icon name="chevron-right" size={20} color={Colors.textTertiary} />
-              </Pressable>
-            </Animated.View>
-          ))}
-        </ScrollView>
+        <FlatList
+          data={EXPOSURE_TEMPLATES}
+          renderItem={renderTemplateItem}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={templateHeader}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={10}
+          initialNumToRender={8}
+          windowSize={5}
+        />
       </Layout>
     );
   }
 
   return (
-    <Layout>
+    <Layout noTabBar>
       <View style={styles.topBar}>
         <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
           <Icon name="arrow-left" size={24} color={Colors.textPrimary} />
@@ -201,46 +244,26 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {steps.length === 0 ? (
+      <FlatList
+        data={steps}
+        renderItem={renderStepItem}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={ladderHeader}
+        ListEmptyComponent={
           <View style={styles.emptyState}>
             <Icon name="layers" size={48} color={Colors.textTertiary} />
             <Text style={styles.emptyText}>No steps yet</Text>
             <Button title="Add from templates" onPress={() => setShowTemplates(true)} />
           </View>
-        ) : (
-          <>
-            {/* Summary */}
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryText}>
-                {steps.filter(s => s.is_mastered).length}/{steps.length} mastered
-              </Text>
-              <Text style={styles.helpfulNote}>
-                Long press any step to reset its target
-              </Text>
-            </View>
-
-            {/* Step list */}
-            {steps.map((step, index) => (
-              <Animated.View key={step.id} entering={FadeInDown.delay(index * 50)}>
-                <ExposureStepCard
-                  step={step}
-                  sessionCount={sessionCounts[step.id] || 0}
-                  isLocked={!step.is_unlocked}
-                  isCurrent={step.id === currentStepId}
-                  isHighlighted={step.id === highlightedStepId}
-                  onPress={() => {
-                    if (step.is_unlocked) {
-                      navigation.navigate('ActiveSession', { stepId: step.id });
-                    }
-                  }}
-                  onEdit={() => handleStepOptions(step)}
-                />
-              </Animated.View>
-            ))}
-          </>
-        )}
-      </ScrollView>
+        }
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        initialNumToRender={5}
+        windowSize={5}
+      />
 
       {/* Success Toast Overlay */}
       <Modal visible={showToast} transparent animationType="none" onRequestClose={dismissToast}>

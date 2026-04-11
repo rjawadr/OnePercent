@@ -15,7 +15,7 @@ import Animated, {
   FadeInUp,
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { Layout } from '../components/ui/Layout';
 import { Colors, Typography, Spacing, Shadows } from '../theme';
@@ -63,7 +63,7 @@ interface TechCardProps {
   index: number;
 }
 
-const TechCard: React.FC<TechCardProps> = ({ item, onPress, index }) => {
+const TechCard = React.memo(({ item, onPress, index }: TechCardProps) => {
   const scale = useSharedValue(1);
 
   // Transform style — separate view, no layout animation
@@ -73,13 +73,13 @@ const TechCard: React.FC<TechCardProps> = ({ item, onPress, index }) => {
 
   return (
     // Outer: layout animation only — no transform on this view
-    <Animated.View entering={FadeInDown.delay(200 + index * 120).springify().damping(18)}>
+    <Animated.View entering={FadeInDown.delay(200 + index * 120).duration(400)}>
       {/* AnimatedPressable carries the scale transform — no layout animation here */}
       <AnimatedPressable
         style={[styles.card, pressStyle]}
         onPress={onPress}
-        onPressIn={() => { scale.value = withSpring(0.97, { damping: 15 }); }}
-        onPressOut={() => { scale.value = withSpring(1, { damping: 12 }); }}
+        onPressIn={() => { scale.value = withTiming(0.97, { duration: 100 }); }}
+        onPressOut={() => { scale.value = withTiming(1, { duration: 100 }); }}
       >
           {/* Accent stripe */}
           <View style={[styles.cardStripe, { backgroundColor: item.accentColor }]} />
@@ -112,7 +112,7 @@ const TechCard: React.FC<TechCardProps> = ({ item, onPress, index }) => {
       </AnimatedPressable>
     </Animated.View>
   );
-};
+});
 
 export const TechniquesHomeScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<TechniquesStackParamList>>();
@@ -123,9 +123,11 @@ export const TechniquesHomeScreen = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
       >
         {/* Hero Section — text only, no circle */}
-        <Animated.View entering={FadeInUp.springify().damping(16)} style={styles.hero}>
+        <Animated.View entering={FadeInUp.duration(600)} style={styles.hero}>
           <Text style={styles.heroTitle}>Calm Techniques</Text>
           <Text style={styles.heroSubtitle}>
             Clinically-grounded tools to interrupt panic and restore calm — offline, always available.

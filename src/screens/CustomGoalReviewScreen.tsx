@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -63,12 +63,12 @@ export const CustomGoalReviewScreen = ({ route, navigation }: any) => {
 
       // TODO: show a brief success toast? 
       // The prompt says "Show a brief success toast... Navigate to ExposureLadderScreen with { highlight: newSteps[0].id }"
-      
+
       // Navigate to ExposureLadderScreen
       // If we goBack it might just go to setup. We want to pop back to ExposureLadder.
-      navigation.navigate('ExposureLadder', { 
+      navigation.navigate('ExposureLadder', {
         highlight: firstStepId,
-        showSuccessToast: true 
+        showSuccessToast: true
       });
     } catch (error) {
       console.error('Error creating custom goal', error);
@@ -85,118 +85,117 @@ export const CustomGoalReviewScreen = ({ route, navigation }: any) => {
           <Icon name="arrow-left" size={24} color={Colors.textPrimary} />
         </Pressable>
         <Text style={styles.topBarTitle}>Review your program</Text>
-        <View style={{ width: 32 }} />
+        <Pressable
+          onPress={handleBeginProgram}
+          disabled={isSubmitting}
+          style={styles.iconPlaceholder}
+        >
+          <Icon name="check" size={24} color={Colors.brand} />
+        </Pressable>
       </View>
-      
+
       <View style={styles.stepIndicatorWrapper}>
         <StepIndicator currentStep={1} totalSteps={2} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Animated.View entering={FadeInDown.delay(100)} style={styles.goalCard}>
-          <View style={styles.goalCardHeader}>
-            <View style={styles.iconCircle}>
-              <MaterialCommunityIcons name={params.goalIcon as any} size={32} color={Colors.brand} />
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} bounces={false} overScrollMode="never">
+          <Animated.View entering={FadeInDown.delay(100)} style={styles.goalCard}>
+            <View style={styles.goalCardHeader}>
+              <View style={styles.iconCircle}>
+                <MaterialCommunityIcons name={params.goalIcon as any} size={32} color={Colors.brand} />
+              </View>
+              <View style={styles.goalCardTitleArea}>
+                <Text style={styles.goalName}>{params.goalName}</Text>
+                <Text style={styles.goalDesc}>{params.goalDescription}</Text>
+              </View>
             </View>
-            <View style={styles.goalCardTitleArea}>
-               <Text style={styles.goalName}>{params.goalName}</Text>
-               <Text style={styles.goalDesc}>{params.goalDescription}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.goalStatsRow}>
-            <Text style={styles.goalStatsText}>
-              {params.steps.length} steps  ·  meters  ·  
-            </Text>
-            <View style={styles.customBadge}>
-              <Text style={styles.customBadgeText}>Custom</Text>
-            </View>
-          </View>
 
-          {(params.startingLocation || params.finalLocation) && (
-            <View style={styles.locationsBox}>
-              <Text style={styles.locationText}>
-                <Text style={styles.locationLabel}>From: </Text>
-                {params.startingLocation}
+            <View style={styles.goalStatsRow}>
+              <Text style={styles.goalStatsText}>
+                {params.steps.length} steps  ·  meters  ·
               </Text>
-              {params.finalLocation && (
+              <View style={styles.customBadge}>
+                <Text style={styles.customBadgeText}>Custom</Text>
+              </View>
+            </View>
+
+            {(params.startingLocation || params.finalLocation) && (
+              <View style={styles.locationsBox}>
                 <Text style={styles.locationText}>
-                  <Text style={styles.locationLabel}>To: </Text>
-                  {params.finalLocation}
+                  <Text style={styles.locationLabel}>From: </Text>
+                  {params.startingLocation}
                 </Text>
-              )}
-            </View>
-          )}
-        </Animated.View>
+                {params.finalLocation && (
+                  <Text style={styles.locationText}>
+                    <Text style={styles.locationLabel}>To: </Text>
+                    {params.finalLocation}
+                  </Text>
+                )}
+              </View>
+            )}
+          </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(200)} style={styles.stepsPreview}>
-          {params.steps.map((step, index) => (
-            <View key={step.id} style={styles.stepPreviewRow}>
-              <Icon 
-                name={index === 0 ? "unlock" : "lock"} 
-                size={16} 
-                color={index === 0 ? Colors.brand : Colors.textTertiary} 
-                style={styles.stepPreviewIcon}
-              />
-              <Text style={styles.stepPreviewNumber}>Step {index + 1}</Text>
-              <Text style={styles.stepPreviewName} numberOfLines={1}>{step.name}</Text>
-              <Text style={styles.stepPreviewDist}>{step.difficulty_value}m</Text>
-              <Text style={styles.stepPreviewSuds}>SUDS {step.initial_suds_estimate}</Text>
-            </View>
-          ))}
-        </Animated.View>
+          <Animated.View entering={FadeInDown.delay(200)} style={styles.stepsPreview}>
+            {params.steps.map((step, index) => (
+              <View key={step.id} style={styles.stepPreviewRow}>
+                <Icon
+                  name={index === 0 ? "unlock" : "lock"}
+                  size={16}
+                  color={index === 0 ? Colors.brand : Colors.textTertiary}
+                  style={styles.stepPreviewIcon}
+                />
+                <Text style={styles.stepPreviewNumber}>Step {index + 1}</Text>
+                <Text style={styles.stepPreviewName} numberOfLines={1}>{step.name}</Text>
+                <Text style={styles.stepPreviewDist}>{step.difficulty_value}m</Text>
+                <Text style={styles.stepPreviewSuds}>SUDS {step.initial_suds_estimate}</Text>
+              </View>
+            ))}
+          </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(300)} style={styles.projectionSection}>
-          <Text style={styles.projectionLabel}>
-            Starting at {baselineDistance}m, here is where daily 1% practice takes step 1:
-          </Text>
-          <ProjectionCard
-            baseline={baselineDistance}
-            unit="meters"
-            frequency="daily"
-          />
-        </Animated.View>
+          <Animated.View entering={FadeInDown.delay(300)} style={styles.projectionSection}>
+            <Text style={styles.projectionLabel}>
+              Starting at {baselineDistance}m, here is where daily 1% practice takes step 1:
+            </Text>
+            <ProjectionCard
+              baseline={baselineDistance}
+              unit="meters"
+              frequency="daily"
+            />
+          </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(400)} style={styles.identitySection}>
-          <Text style={styles.identityLabel}>I am someone who...</Text>
-          <Text style={styles.identitySubtitle}>(Optional) Shown in your coaching nudges during sessions.</Text>
-          <TextInput
-            style={styles.input}
-            value={identityStatement}
-            onChangeText={setIdentityStatement}
-            placeholder="...can leave my home and move through the world."
-            placeholderTextColor={Colors.textTertiary}
-          />
-        </Animated.View>
+          <Animated.View entering={FadeInDown.delay(400)} style={styles.identitySection}>
+            <Text style={styles.identityLabel}>I am someone who...</Text>
+            <Text style={styles.identitySubtitle}>(Optional) Shown in your coaching nudges during sessions.</Text>
+            <TextInput
+              style={styles.input}
+              value={identityStatement}
+              onChangeText={setIdentityStatement}
+              placeholder="...can leave my home and move through the world."
+              placeholderTextColor={Colors.textTertiary}
+            />
+          </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(500)} style={styles.disclaimerSection}>
-          <Text style={styles.disclaimerText}>
-            This program is a wellness tool, not a medical device.{'\n'}
-            It does not replace professional therapy or clinical advice.
-          </Text>
-        </Animated.View>
-      </ScrollView>
+          <Animated.View entering={FadeInDown.delay(500)} style={styles.disclaimerSection}>
+            <Text style={styles.disclaimerText}>
+              This program is a wellness tool, not a medical device.{'\n'}
+              It does not replace professional therapy or clinical advice.
+            </Text>
+          </Animated.View>
+        </ScrollView>
 
-      <View style={styles.footer}>
-        <Button
-          title="← Edit steps"
-          type="secondary"
-          onPress={() => navigation.goBack()}
-          style={styles.footerBtn}
-        />
-        <Button
-          title="Begin this program"
-          type="primary"
-          onPress={handleBeginProgram}
-          style={styles.footerBtn}
-          loading={isSubmitting}
-        />
-      </View>
+      </KeyboardAvoidingView>
     </Layout>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -250,8 +249,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.xl,
+    paddingBottom: Spacing.xxl,
   },
-  
+
   // Goal Card
   goalCard: {
     backgroundColor: Colors.surface,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textSecondary,
   },
-  
+
   // Steps
   stepsPreview: {
     backgroundColor: Colors.surface,
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     width: 55,
     textAlign: 'right',
   },
-  
+
   // Projection
   projectionSection: {
     marginBottom: Spacing.xl,
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: Spacing.m,
   },
-  
+
   // Identity
   identitySection: {
     marginBottom: Spacing.xl,
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
-  
+
   // Disclaimer
   disclaimerSection: {
     alignItems: 'center',
@@ -430,13 +430,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: Spacing.xl,
     paddingTop: Spacing.m,
-    paddingBottom: 110, // Increased to avoid overlap with absolute CustomTabBar
+    paddingBottom: Spacing.xl,
     backgroundColor: Colors.surface,
     borderTopWidth: 1,
     borderTopColor: Colors.borderLight,
     gap: Spacing.l,
+    ...Shadows.card,
   },
   footerBtn: {
     flex: 1,
+  },
+  iconPlaceholder: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

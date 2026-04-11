@@ -8,6 +8,7 @@ export interface FearProfile {
   emergency_contact_number?: string;
   crisis_helpline_name?: string;
   crisis_helpline_number?: string;
+  identity_statement?: string;
   onboarding_completed: boolean;
   created_at: string;
   updated_at: string;

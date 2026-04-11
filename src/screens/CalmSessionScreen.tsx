@@ -147,7 +147,7 @@ export const CalmSessionScreen = () => {
             <View style={styles.countdownBox}>
               <Animated.Text 
                 key={countdown}
-                entering={FadeInDown.springify()}
+                entering={FadeInDown.duration(400)}
                 style={styles.countdownNum}
               >
                 {countdown}
@@ -197,7 +197,7 @@ export const CalmSessionScreen = () => {
             {/* Phase text */}
             <Animated.View
               key={state.phase}
-              entering={FadeInUp.duration(250).springify()}
+              entering={FadeInUp.duration(250)}
               exiting={FadeOut.duration(150)}
               style={styles.phaseTextContainer}
             >
@@ -230,7 +230,7 @@ export const CalmSessionScreen = () => {
             </Animated.View>
           </Animated.View>
         ) : (
-          <Animated.View entering={FadeIn.springify()} style={styles.completeContainer}>
+          <Animated.View entering={FadeIn.duration(400)} style={styles.completeContainer}>
             <LottieView
               source={require('../assets/lottie/breathing_circle.json')}
               style={styles.completeLottie}

@@ -46,7 +46,12 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
 
   return (
     <Layout>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
+      >
         {/* Header */}
         <View style={styles.header}>
           <View>
@@ -54,8 +59,8 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
             <Text style={styles.headerSubtitle}>1% further, every session</Text>
           </View>
           <View style={styles.headerActions}>
-            <Pressable 
-              onPress={() => navigation.navigate('ExposureLadder', { initialShowTemplates: true })} 
+            <Pressable
+              onPress={() => navigation.navigate('ExposureLadder', { initialShowTemplates: true })}
               hitSlop={12}
               style={styles.addBtn}
             >
@@ -223,12 +228,6 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
         </Text>
       </ScrollView>
 
-      {/* Crisis FAB */}
-      <CrisisButton
-        crisisNumber={fearProfile?.crisis_helpline_number}
-        emergencyName={fearProfile?.emergency_contact_name}
-        emergencyNumber={fearProfile?.emergency_contact_number}
-      />
     </Layout>
   );
 };

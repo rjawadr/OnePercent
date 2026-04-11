@@ -204,6 +204,8 @@ export const HabitDetailScreen = () => {
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
         scrollEventThrottle={16}
+        bounces={false}
+        overScrollMode="never"
       >
         {/* Large Aesthetic Header */}
         <View style={styles.topNav}>

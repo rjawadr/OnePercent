@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
-  withSpring, 
+  withTiming, 
   withSequence,
   FadeInDown,
   FadeIn
@@ -70,8 +70,8 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
       scale.value = withSequence(
-        withSpring(1.05),
-        withSpring(1)
+        withTiming(1.05, { duration: 100 }),
+        withTiming(1, { duration: 100 })
       );
       onLog(numValue, notes);
       bottomSheetRef.current?.close();
@@ -84,8 +84,8 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
     setValue(next.toString());
     Vibration.vibrate(10);
     scale.value = withSequence(
-      withSpring(1.1, { damping: 10, stiffness: 100 }),
-      withSpring(1)
+      withTiming(1.1, { duration: 100 }),
+      withTiming(1, { duration: 100 })
     );
   };
 
@@ -118,6 +118,7 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
       style={[styles.sheetContainer, { marginHorizontal: Spacing.m }]}
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
+      animationConfigs={{ duration: 300 }}
     >
       <BottomSheetScrollView 
         contentContainerStyle={[
@@ -125,6 +126,8 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
           { paddingBottom: Math.max(insets.bottom, 40) + 40 }
         ]}
         showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
       >
         {/* Header Section */}
         <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>

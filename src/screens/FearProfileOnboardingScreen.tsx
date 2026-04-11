@@ -285,6 +285,8 @@ export const FearProfileOnboardingScreen = ({ navigation }: any) => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          bounces={false}
+          overScrollMode="never"
         >
           {renderStep()}
         </ScrollView>

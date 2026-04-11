@@ -18,3 +18,4 @@ export * from './CustomGoalReviewScreen';
 export * from './TechniquesHomeScreen';
 export * from './CalmSessionScreen';
 export * from './GroundingScreen';
+export * from './FearProfileScreen';

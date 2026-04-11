@@ -8,7 +8,7 @@ import LottieView from 'lottie-react-native';
 import Animated, { 
   useAnimatedStyle, 
   useSharedValue, 
-  withSpring,
+  withTiming,
   interpolate,
   Extrapolate
 } from 'react-native-reanimated';
@@ -23,9 +23,8 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
   const translateX = useSharedValue(activeIndex * TAB_WIDTH);
 
   useEffect(() => {
-    translateX.value = withSpring(activeIndex * TAB_WIDTH, {
-      damping: 20,
-      stiffness: 150,
+    translateX.value = withTiming(activeIndex * TAB_WIDTH, {
+      duration: 300,
     });
   }, [activeIndex]);
 
@@ -109,15 +108,14 @@ const AnimatedIcon = ({ isFocused, name, color }: { isFocused: boolean; name: st
   const scale = useSharedValue(isFocused ? 1.2 : 1);
   
   useEffect(() => {
-    scale.value = withSpring(isFocused ? 1.2 : 1, {
-      damping: 12,
-      stiffness: 120,
+    scale.value = withTiming(isFocused ? 1.2 : 1, {
+      duration: 200,
     });
   }, [isFocused]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    opacity: withSpring(isFocused ? 1 : 0.7),
+    opacity: withTiming(isFocused ? 1 : 0.7, { duration: 200 }),
   }));
 
   return (

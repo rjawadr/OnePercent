@@ -31,7 +31,7 @@ export const MasteryBadge = ({
   if (!animated) return content;
 
   return (
-    <Animated.View entering={ZoomIn.delay(200).springify()}>
+    <Animated.View entering={ZoomIn.delay(200).duration(400)}>
       {content}
     </Animated.View>
   );
@@ -49,7 +49,7 @@ export const MasteryOverlay = ({
   onDismiss: () => void;
 }) => (
   <Animated.View entering={FadeIn.duration(400)} style={styles.overlay}>
-    <Animated.View entering={ZoomIn.delay(200).springify()} style={styles.overlayCard}>
+    <Animated.View entering={ZoomIn.delay(200).duration(400)} style={styles.overlayCard}>
       <View style={styles.iconCircle}>
         <Icon name="award" size={40} color={Colors.brand} />
       </View>

@@ -16,7 +16,7 @@ import Animated, {
   SlideInRight,
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import LottieView from 'lottie-react-native';
 import { Layout } from '../components/ui/Layout';
@@ -88,8 +88,8 @@ export const GroundingScreen = () => {
           hitSlop={16} 
           onPress={handleEnd} 
           style={[styles.closeBtn, closeBtnStyle]}
-          onPressIn={() => { closeBtnScale.value = withSpring(0.9); }}
-          onPressOut={() => { closeBtnScale.value = withSpring(1); }}
+          onPressIn={() => { closeBtnScale.value = withTiming(0.9, { duration: 100 }); }}
+          onPressOut={() => { closeBtnScale.value = withTiming(1, { duration: 100 }); }}
         >
           <Icon name="x" size={20} color={Colors.textSecondary} />
         </AnimatedPressable>
@@ -111,7 +111,7 @@ export const GroundingScreen = () => {
         {!state.isComplete && state.currentStep ? (
           <Animated.View
             key={state.currentStepIndex}
-            entering={SlideInRight.springify().damping(20)}
+            entering={SlideInRight.duration(400)}
             exiting={FadeIn.duration(100)}
             style={styles.stepContainer}
           >
@@ -133,7 +133,7 @@ export const GroundingScreen = () => {
 
             {/* Count badge */}
             <Animated.View
-              entering={FadeInUp.delay(80).springify()}
+            entering={FadeInUp.delay(80).duration(400)}
               style={[styles.countBadge, { backgroundColor: senseColor.light }]}
             >
               <Text style={[styles.countNumber, { color: senseColor.color }]}>
@@ -178,10 +178,10 @@ export const GroundingScreen = () => {
                 style={[styles.cta, { backgroundColor: senseColor.color }, btnStyle]}
                 onPress={nextStep}
                 onPressIn={() => { 
-                  btnScale.value = withSpring(0.96, { damping: 15, stiffness: 200 }); 
+                  btnScale.value = withTiming(0.96, { duration: 100 }); 
                 }}
                 onPressOut={() => { 
-                  btnScale.value = withSpring(1, { damping: 12, stiffness: 150 }); 
+                  btnScale.value = withTiming(1, { duration: 100 }); 
                 }}
               >
                 <Text style={styles.ctaText}>
@@ -192,7 +192,7 @@ export const GroundingScreen = () => {
             </Animated.View>
           </Animated.View>
         ) : (
-          <Animated.View entering={FadeIn.springify()} style={styles.completeContainer}>
+          <Animated.View entering={FadeIn.duration(400)} style={styles.completeContainer}>
             <LottieView
               source={require('../assets/lottie/grounding_glow.json')}
               style={styles.completeLottie}
@@ -218,8 +218,8 @@ export const GroundingScreen = () => {
             <AnimatedPressable 
               style={[styles.doneBtn, doneBtnStyle]} 
               onPress={handleEnd}
-              onPressIn={() => { doneBtnScale.value = withSpring(0.95); }}
-              onPressOut={() => { doneBtnScale.value = withSpring(1); }}
+              onPressIn={() => { doneBtnScale.value = withTiming(0.95, { duration: 100 }); }}
+              onPressOut={() => { doneBtnScale.value = withTiming(1, { duration: 100 }); }}
             >
               <Text style={styles.doneBtnText}>Return to Techniques</Text>
             </AnimatedPressable>

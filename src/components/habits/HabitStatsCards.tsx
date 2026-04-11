@@ -19,20 +19,18 @@ const StatCard = ({ label, value, icon, color, subtitle }: StatCardProps) => {
   const scale = React.useRef(new Animated.Value(1)).current;
 
   const onPressIn = () => {
-    Animated.spring(scale, {
+    Animated.timing(scale, {
       toValue: 0.96,
       useNativeDriver: true,
-      tension: 100,
-      friction: 10,
+      duration: 150,
     }).start();
   };
 
   const onPressOut = () => {
-    Animated.spring(scale, {
+    Animated.timing(scale, {
       toValue: 1,
       useNativeDriver: true,
-      tension: 100,
-      friction: 10,
+      duration: 150,
     }).start();
   };
 

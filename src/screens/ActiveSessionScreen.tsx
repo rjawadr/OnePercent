@@ -177,6 +177,8 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          bounces={false}
+          overScrollMode="never"
         >
           {/* ═══ PRE-SESSION ═══ */}
           {phase === 'pre' && (
@@ -326,13 +328,6 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
           )}
         </ScrollView>
 
-        {/* Crisis FAB */}
-        <CrisisButton
-          crisisNumber={fearProfile?.crisis_helpline_number}
-          emergencyName={fearProfile?.emergency_contact_name}
-          emergencyNumber={fearProfile?.emergency_contact_number}
-          pulsing={showCrisisBanner}
-        />
       </KeyboardAvoidingView>
     </Layout>
   );

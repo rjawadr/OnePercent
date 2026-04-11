@@ -23,6 +23,7 @@ import {
   TechniquesHomeScreen,
   CalmSessionScreen,
   GroundingScreen,
+  FearProfileScreen,
 } from '../screens';
 import { CustomTabBar } from '../components/ui/CustomTabBar';
 import { Colors } from '../theme';
@@ -49,6 +50,7 @@ const TherapyStack = () => (
     <Stack.Screen name="AgoraphobiaStats" component={AgoraphobiaStatsScreen} />
     <Stack.Screen name="CustomGoalSetup" component={CustomGoalSetupScreen} />
     <Stack.Screen name="CustomGoalReview" component={CustomGoalReviewScreen} />
+    <Stack.Screen name="FearProfile" component={FearProfileScreen} />
   </Stack.Navigator>
 );
 
@@ -57,6 +59,7 @@ const SettingsStack = () => (
     <Stack.Screen name="SettingsRoot" component={SettingsScreen} />
     <Stack.Screen name="HabitManager" component={HabitManagerScreen} />
     <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
+    <Stack.Screen name="FearProfile" component={FearProfileScreen} />
   </Stack.Navigator>
 );
 

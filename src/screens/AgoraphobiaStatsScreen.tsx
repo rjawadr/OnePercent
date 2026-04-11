@@ -166,7 +166,12 @@ export const AgoraphobiaStatsScreen = ({ navigation }: any) => {
         <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        contentContainerStyle={styles.scroll} 
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
+      >
         {/* Top stats grid */}
         <Animated.View entering={FadeInDown.delay(100)} style={styles.grid}>
           <StatBox label="Sessions" value={completedSessions.length.toString()} icon="activity" color={Colors.brand} />

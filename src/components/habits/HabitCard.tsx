@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withSpring, withSequence,
+  useSharedValue, useAnimatedStyle, withTiming, withSequence,
 } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../theme';
@@ -55,8 +55,8 @@ export function HabitCard({
 
   const handlePress = () => {
     scale.value = withSequence(
-      withSpring(0.97, { damping: 12, stiffness: 100 }),
-      withSpring(1, { damping: 12, stiffness: 100 })
+      withTiming(0.97, { duration: 100 }),
+      withTiming(1, { duration: 100 })
     );
     onPress();
   };

@@ -21,7 +21,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { FadeIn, FadeInDown, Layout as ReanimatedLayout } from 'react-native-reanimated';
 
 const AllDoneState = ({ streakCount, totalHabits }: { streakCount: number, totalHabits: number }) => (
-  <Animated.View entering={FadeInDown.duration(800).springify()} style={styles.allDoneContainer}>
+  <Animated.View entering={FadeInDown.duration(800)} style={styles.allDoneContainer}>
     <View style={styles.allDoneHero}>
       <View style={styles.successHalo}>
         <View style={styles.successIconStage}>
@@ -193,6 +193,21 @@ export const TodayScreen = () => {
     return streak?.current_streak || 0;
   };
 
+  const renderHabitItem = useCallback(({ item }: { item: Habit }) => {
+    const completed = isCompletedOnDate(item.id, activeDateStr);
+    return (
+      <HabitCard
+        habit={item}
+        completedToday={completed}
+        progressPercent={getProgressPercent(item.id, activeDateStr)}
+        currentStreak={getStreak(item.id)}
+        valueAchieved={getValueAchieved(item.id, activeDateStr)}
+        onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
+        onLog={() => setSelectedHabit(item)}
+      />
+    );
+  }, [isCompletedOnDate, activeDateStr, getProgressPercent, getStreak, getValueAchieved, navigation]);
+
   const renderEmpty = () => (
     <Animated.View entering={FadeIn.delay(300)} style={styles.emptyContainer}>
       <View style={styles.emptyIconGroup}>
@@ -220,23 +235,8 @@ export const TodayScreen = () => {
       <Animated.FlatList
         data={allCompletedOnActiveDate ? [] : habits.filter(h => h.status !== 'archived')}
         keyExtractor={(item) => item.id}
-        itemLayoutAnimation={ReanimatedLayout.springify()}
-        renderItem={({ item }) => {
-          const completed = isCompletedOnDate(item.id, activeDateStr);
-          if (allCompletedOnActiveDate) return null;
-
-          return (
-            <HabitCard
-              habit={item}
-              completedToday={completed}
-              progressPercent={getProgressPercent(item.id, activeDateStr)}
-              currentStreak={getStreak(item.id)}
-              valueAchieved={getValueAchieved(item.id, activeDateStr)}
-              onPress={() => navigation.navigate('HabitDetail', { habitId: item.id })}
-              onLog={() => setSelectedHabit(item)}
-            />
-          );
-        }}
+        itemLayoutAnimation={ReanimatedLayout.duration(400)}
+        renderItem={renderHabitItem}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={habits.length === 0 ? renderEmpty : (allCompletedOnActiveDate ? <AllDoneState streakCount={totalStreak} totalHabits={habits.length} /> : null)}
         contentContainerStyle={[styles.listContent, { paddingBottom: 80 }]}
@@ -244,6 +244,8 @@ export const TodayScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brand} />
         }
+        bounces={false}
+        overScrollMode="never"
       />
 
       <CreateHabitModal

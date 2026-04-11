@@ -69,21 +69,19 @@ export const HabitManagerScreen = () => {
   useEffect(() => {
     if (confirmAction) {
       setShowToast(true);
-      Animated.spring(confirmAnim, {
+      Animated.timing(confirmAnim, {
         toValue: 1,
+        duration: 300,
         useNativeDriver: true,
-        tension: 60,
-        friction: 10,
       }).start();
     }
   }, [confirmAction]);
 
   const dismissToast = () => {
-    Animated.spring(confirmAnim, {
+    Animated.timing(confirmAnim, {
       toValue: 0,
+      duration: 250,
       useNativeDriver: true,
-      tension: 60,
-      friction: 12,
     }).start(() => {
       setShowToast(false);
       setConfirmAction(null);
@@ -91,11 +89,10 @@ export const HabitManagerScreen = () => {
   };
 
   useEffect(() => {
-    Animated.spring(slideAnim, {
+    Animated.timing(slideAnim, {
       toValue: viewMode === 'active' ? 0 : 1,
+      duration: 300,
       useNativeDriver: false,
-      friction: 9,
-      tension: 60,
     }).start();
   }, [viewMode]);
 
@@ -262,6 +259,8 @@ export const HabitManagerScreen = () => {
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+        bounces={false}
+        overScrollMode="never"
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconCircle}>
