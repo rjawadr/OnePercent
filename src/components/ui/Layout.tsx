@@ -44,7 +44,7 @@ export const Layout = ({ children, style }: LayoutProps) => {
         </Svg>
       </View>
 
-      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}>
+      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom + 64 }}>
         {children}
       </View>
     </View>

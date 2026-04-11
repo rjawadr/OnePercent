@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Platform } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { ProjectionCard } from '../components/habits/ProjectionCard';
@@ -94,7 +95,9 @@ export const CustomGoalReviewScreen = ({ route, navigation }: any) => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInDown.delay(100)} style={styles.goalCard}>
           <View style={styles.goalCardHeader}>
-            <Text style={styles.goalIcon}>{params.goalIcon}</Text>
+            <View style={styles.iconCircle}>
+              <MaterialCommunityIcons name={params.goalIcon as any} size={32} color={Colors.brand} />
+            </View>
             <View style={styles.goalCardTitleArea}>
                <Text style={styles.goalName}>{params.goalName}</Text>
                <Text style={styles.goalDesc}>{params.goalDescription}</Text>
@@ -265,8 +268,13 @@ const styles = StyleSheet.create({
     gap: Spacing.m,
     marginBottom: Spacing.m,
   },
-  goalIcon: {
-    fontSize: 32,
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.brandLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   goalCardTitleArea: {
     flex: 1,

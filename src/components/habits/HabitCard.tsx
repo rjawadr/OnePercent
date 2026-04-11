@@ -79,13 +79,8 @@ export function HabitCard({
         style={styles.touchable}
       >
         <View style={styles.topSection}>
-          <View style={[styles.iconStage, { backgroundColor: categoryColor + '10' }]}>
-            <View style={[styles.iconInner, { borderColor: categoryColor + '20' }]} />
-            {habit.icon ? (
-              <Text style={styles.emoji}>{habit.icon}</Text>
-            ) : (
-              <Icon name="lightning-bolt" size={26} color={categoryColor} />
-            )}
+          <View style={[styles.iconStage, { backgroundColor: (habit.color || Colors.brand) + '15' }]}>
+             <Icon name={habit.icon || 'fire'} size={28} color={habit.color || Colors.brand} />
           </View>
 
           <View style={styles.mainInfo}>

@@ -150,7 +150,7 @@ export const TherapyScreen = ({ navigation }: any) => {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
   header: {
     paddingHorizontal: Spacing.xl,

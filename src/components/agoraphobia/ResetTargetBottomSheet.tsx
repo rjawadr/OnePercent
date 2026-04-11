@@ -1,8 +1,10 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import Icon from 'react-native-vector-icons/Feather';
-import { Colors, Typography, Spacing } from '../../theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from '@react-native-community/blur';
+import { Colors, Typography, Spacing, Shadows } from '../../theme';
 import { Button } from '../ui/Button';
 import { useAgoraphobiaStore } from '../../store/agoraphobiaStore';
 
@@ -13,6 +15,27 @@ interface ResetTargetBottomSheetProps {
   onClose: () => void;
 }
 
+const GlassBackground = ({ style, ...props }: any) => (
+  <View style={[style, { overflow: 'hidden', borderRadius: 32 }]}>
+    <BlurView
+      style={StyleSheet.absoluteFill}
+      blurType="dark"
+      blurAmount={25}
+      reducedTransparencyFallbackColor="black"
+    />
+    <View 
+      style={[
+        StyleSheet.absoluteFill, 
+        { 
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderWidth: 1.5,
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+        }
+      ]} 
+    />
+  </View>
+);
+
 export const ResetTargetBottomSheet = ({
   stepId,
   currentValue,
@@ -22,6 +45,7 @@ export const ResetTargetBottomSheet = ({
   const [stage, setStage] = useState<1 | 2 | 3>(1);
   const [newTarget, setNewTarget] = useState<number>(Math.max(1, currentValue - 1));
   const { resetStepTarget } = useAgoraphobiaStore();
+  const insets = useSafeAreaInsets();
 
   const handleReset = async () => {
     await resetStepTarget(stepId, newTarget);
@@ -34,20 +58,24 @@ export const ResetTargetBottomSheet = ({
         return (
           <View style={styles.stageContainer}>
             <View style={styles.iconCircle}>
-              <Icon name="activity" size={32} color={Colors.amber} />
+              <Icon name="trending-down" size={32} color={Colors.amber} />
             </View>
             <Text style={styles.title}>Plateaus are normal</Text>
             <Text style={styles.description}>
-              The "Plateau of Latent Potential" means you are making progress we just can't see yet. Resetting your target drops your mastery to 0.
+              The "Plateau of Latent Potential" means you are making progress we just can't see yet. Resetting drops mastery to zero.
             </Text>
             <View style={styles.buttonGroup}>
-              <Button title="Keep Going" onPress={onClose} style={styles.button} />
+              <Button 
+                title="Trust the Process" 
+                onPress={onClose} 
+                style={styles.button} 
+              />
               <Button
-                title="I need to reset"
+                title="Adjust Baseline"
                 type="secondary"
                 onPress={() => setStage(2)}
-                textStyle={{ color: Colors.amber }}
-                style={styles.button}
+                textStyle={{ color: 'rgba(255,255,255,0.6)' }}
+                style={styles.ghostButton}
               />
             </View>
           </View>
@@ -55,9 +83,9 @@ export const ResetTargetBottomSheet = ({
       case 2:
         return (
           <View style={styles.stageContainer}>
-            <Text style={styles.title}>Adjust your target</Text>
+            <Text style={styles.title}>Adjust Baseline</Text>
             <Text style={styles.description}>
-              Find a baseline where you feel challenged but confident.
+              Find a challenge level where you feel confident but sharp.
             </Text>
 
             <View style={styles.stepperContainer}>
@@ -65,7 +93,7 @@ export const ResetTargetBottomSheet = ({
                 style={styles.stepperButton}
                 onPress={() => setNewTarget(Math.max(1, newTarget - 1))}
               >
-                <Icon name="minus" size={24} color={Colors.textPrimary} />
+                <Icon name="minus" size={24} color="#fff" />
               </Pressable>
               
               <View style={styles.stepperValueContainer}>
@@ -77,33 +105,33 @@ export const ResetTargetBottomSheet = ({
                 style={styles.stepperButton}
                 onPress={() => setNewTarget(newTarget + 1)}
               >
-                <Icon name="plus" size={24} color={Colors.textPrimary} />
+                <Icon name="plus" size={24} color="#fff" />
               </Pressable>
             </View>
 
             <View style={styles.buttonGroup}>
-              <Button title="Continue" onPress={() => setStage(3)} style={styles.button} />
-              <Button title="Cancel" type="secondary" onPress={onClose} style={styles.button} />
+              <Button title="Next Step" onPress={() => setStage(3)} style={styles.button} />
+              <Button title="Cancel" type="secondary" onPress={onClose} style={styles.ghostButton} />
             </View>
           </View>
         );
       case 3:
         return (
           <View style={styles.stageContainer}>
-            <View style={styles.iconCircle}>
-              <Icon name="refresh-cw" size={32} color={Colors.brand} />
+            <View style={[styles.iconCircle, { borderColor: Colors.brand + '40' }]}>
+              <Icon name="zap" size={32} color={Colors.brand} />
             </View>
-            <Text style={styles.title}>Confirm New Target</Text>
+            <Text style={styles.title}>Confirm Shift</Text>
             <Text style={styles.description}>
-              Your efforts so far will be logged forever in the charts. Resetting your current target to <Text style={styles.highlight}>{newTarget} {unit}</Text>.
+              Your current target will be recalibrated to <Text style={styles.highlight}>{newTarget} {unit}</Text>. Previous wins remain logged.
             </Text>
             <View style={styles.buttonGroup}>
               <Button
-                title="Reset & Restart"
+                title="Confirm & Restart"
                 onPress={handleReset}
                 style={styles.button}
               />
-              <Button title="Cancel" type="secondary" onPress={onClose} style={styles.button} />
+              <Button title="Back" type="secondary" onPress={() => setStage(2)} style={styles.ghostButton} />
             </View>
           </View>
         );
@@ -120,12 +148,15 @@ export const ResetTargetBottomSheet = ({
   return (
     <BottomSheet
       index={0}
-      snapPoints={['50%']}
+      snapPoints={['55%']}
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={styles.sheetBackground}
+      backgroundComponent={GlassBackground}
       handleIndicatorStyle={styles.indicator}
+      bottomInset={64 + Math.max(insets.bottom, 12) + 16}
+      detached={true}
+      style={{ marginHorizontal: Spacing.m }}
     >
       <BottomSheetView style={styles.contentContainer}>
         {renderContent()}
@@ -135,11 +166,10 @@ export const ResetTargetBottomSheet = ({
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: Colors.surface,
-  },
   indicator: {
-    backgroundColor: Colors.textTertiary,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 40,
+    height: 4,
   },
   contentContainer: {
     padding: Spacing.xl,
@@ -151,71 +181,83 @@ const styles = StyleSheet.create({
   iconCircle: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: Colors.background,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.l,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   title: {
     ...Typography.heading,
     fontSize: 24,
-    color: Colors.textPrimary,
+    color: '#fff',
     marginBottom: Spacing.s,
+    fontWeight: '900',
     textAlign: 'center',
   },
   description: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
     marginBottom: Spacing.xl,
     textAlign: 'center',
     lineHeight: 22,
+    fontSize: 14,
   },
   highlight: {
-    fontWeight: '700',
-    color: Colors.textPrimary,
+    fontWeight: '900',
+    color: Colors.brand,
   },
   buttonGroup: {
     width: '100%',
-    gap: Spacing.m,
+    gap: 12,
   },
   button: {
     width: '100%',
+    borderRadius: 20,
+    height: 56,
+  },
+  ghostButton: {
+    width: '100%',
+    borderWidth: 0,
+    backgroundColor: 'transparent',
   },
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    backgroundColor: Colors.background,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.1)',
     padding: Spacing.m,
     marginBottom: Spacing.xxl,
   },
   stepperButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.surface,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   stepperValueContainer: {
     alignItems: 'center',
   },
   newTargetText: {
     ...Typography.heading,
-    fontSize: 32,
-    color: Colors.textPrimary,
+    fontSize: 36,
+    color: '#fff',
+    fontWeight: '900',
   },
   unitText: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
+    ...Typography.micro,
+    color: 'rgba(255,255,255,0.4)',
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 });

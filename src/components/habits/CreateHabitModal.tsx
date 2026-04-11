@@ -11,13 +11,17 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
+  Pressable,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Habit } from '../../models/Habit';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
 import { Button } from '../ui/Button';
 import { ImprovementFrequency } from '../../engine/onePercentEngine';
 import { CreateHabitStep2 } from './CreateHabitStep2';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { BlurView } from '@react-native-community/blur';
+import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
 
 interface CreateHabitModalProps {
   isVisible: boolean;
@@ -40,25 +44,20 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
   return (
     <View style={styles.indicatorContainer}>
       {Array.from({ length: totalSteps }).map((_, i) => (
-        <React.Fragment key={i}>
+        <View key={i} style={styles.indicatorSegment}>
           <View style={[
-            styles.indicatorDot,
-            i === currentStep && styles.indicatorDotActive,
-            i < currentStep && styles.indicatorDotCompleted
+            styles.indicatorBar,
+            i <= currentStep && styles.indicatorBarActive,
+            i < currentStep && styles.indicatorBarCompleted
           ]} />
-          {i < totalSteps - 1 && (
-            <View style={[
-              styles.indicatorLine,
-              i < currentStep && styles.indicatorLineActive
-            ]} />
-          )}
-        </React.Fragment>
+        </View>
       ))}
     </View>
   );
 }
 
-export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialHabit }: CreateHabitModalProps) => {
+export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, onClose, onAdd, onUpdate, initialHabit }) => {
+  const insets = useSafeAreaInsets();
   const [step, setStep] = useState(1);
   const isEdit = !!initialHabit;
 
@@ -79,6 +78,8 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
   const [anchorHabit, setAnchorHabit] = useState('');
   const [temptationBundle, setTemptationBundle] = useState('');
   const [activeDays, setActiveDays] = useState('1111111');
+
+  const TAB_BAR_OFFSET = 64 + Math.max(insets.bottom, 12) + 12;
 
   React.useEffect(() => {
     if (initialHabit && isVisible) {
@@ -173,7 +174,7 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
         start_date: new Date().toISOString().split('T')[0],
         is_active: true,
         created_at: new Date().toISOString(),
-        icon: '✨',
+        icon: 'sparkles',
         color: Colors.brand + '20',
         streak: 0,
         status: 'active',
@@ -186,22 +187,32 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
   };
 
   const renderStep1 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.sectionTitle}>Define your new self</Text>
+    <Animated.View entering={FadeInDown.duration(400)} style={styles.stepContent}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Define your new self</Text>
+        <Text style={styles.sectionSubtitle}>Tiny habits, massive changes.</Text>
+      </View>
       
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>What is your new habit?</Text>
+        <View style={styles.labelRow}>
+          <Icon name="pencil-outline" size={18} color={Colors.brand} />
+          <Text style={styles.label}>What is your new habit?</Text>
+        </View>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
           placeholder="e.g. Read Philosophy"
           placeholderTextColor={Colors.textTertiary}
+          selectionColor={Colors.brand}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Category</Text>
+        <View style={styles.labelRow}>
+          <Icon name="tag-outline" size={18} color={Colors.brand} />
+          <Text style={styles.label}>Category</Text>
+        </View>
         <View style={styles.chipRow}>
           {CATEGORIES.map(cat => (
             <TouchableOpacity
@@ -217,7 +228,10 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Type</Text>
+        <View style={styles.labelRow}>
+          <Icon name="form-select" size={18} color={Colors.brand} />
+          <Text style={styles.label}>Measurement Type</Text>
+        </View>
         <View style={styles.chipRow}>
           {TYPES.map(t => (
             <TouchableOpacity
@@ -230,46 +244,60 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
               }}
               activeOpacity={0.7}
             >
-              <Icon name={t.icon} size={16} color={unitType === t.value ? Colors.brand : Colors.textSecondary} />
+              <Icon name={t.icon} size={18} color={unitType === t.value ? Colors.brand : Colors.textSecondary} />
               <Text style={[styles.chipText, unitType === t.value && styles.chipTextActive]}>{t.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 
   const renderStep3 = () => (
-    <View style={styles.stepContent}>
-      <Text style={styles.sectionTitle}>Final Polish</Text>
+    <Animated.View entering={FadeInDown.duration(400)} style={styles.stepContent}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Final Polish</Text>
+        <Text style={styles.sectionSubtitle}>Environmental design is key.</Text>
+      </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Daily Reminder</Text>
+        <View style={styles.labelRow}>
+          <Icon name="bell-ring-outline" size={18} color={Colors.brand} />
+          <Text style={styles.label}>Daily Pulse</Text>
+        </View>
         <View style={styles.inputWithIcon}>
-          <Icon name="bell-outline" size={20} color={Colors.textSecondary} />
+          <Icon name="clock-outline" size={20} color={Colors.textSecondary} />
           <TextInput
             style={styles.inlineInput}
             value={notificationTime}
             onChangeText={setNotificationTime}
             placeholder="08:00"
             placeholderTextColor={Colors.textTertiary}
+            selectionColor={Colors.brand}
           />
         </View>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Anchor Habit (Optional)</Text>
+        <View style={styles.labelRow}>
+          <Icon name="anchor" size={18} color={Colors.brand} />
+          <Text style={styles.label}>Habit Anchor (Optional)</Text>
+        </View>
         <TextInput
           style={styles.input}
           value={anchorHabit}
           onChangeText={setAnchorHabit}
           placeholder="e.g. After I brush my teeth..."
           placeholderTextColor={Colors.textTertiary}
+          selectionColor={Colors.brand}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Active Days</Text>
+        <View style={styles.labelRow}>
+          <Icon name="calendar-check-outline" size={18} color={Colors.brand} />
+          <Text style={styles.label}>Active Cycles</Text>
+        </View>
         <View style={styles.daysRow}>
           {['M','T','W','T','F','S','S'].map((day, i) => (
             <TouchableOpacity
@@ -287,39 +315,40 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
           ))}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 
   return (
     <Modal
       visible={isVisible}
-      animationType="slide"
+      animationType="fade"
       transparent={true}
       statusBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        {/* Backdrop for click-to-close */}
-        <TouchableOpacity
-          style={styles.backdrop}
-          activeOpacity={1}
-          onPress={() => {
-            Keyboard.dismiss();
-            onClose();
-          }}
+        <BlurView 
+          style={StyleSheet.absoluteFill}
+          blurType="dark"
+          blurAmount={10}
+          reducedTransparencyFallbackColor="rgba(0,0,0,0.5)"
         />
+        <Pressable style={styles.backdrop} onPress={onClose} />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={styles.keyboardView}
         >
-          <View style={styles.modalContent}>
-            {/* Grab Handle for aesthetic feel */}
+          <Animated.View 
+            entering={FadeInUp.springify().damping(15)}
+            layout={Layout.springify()}
+            style={[styles.modalContent, { marginBottom: TAB_BAR_OFFSET }]}
+          >
             <View style={styles.grabHandle} />
 
             <View style={styles.header}>
               <View style={styles.headerLeft}>
-                <Text style={styles.title}>{isEdit ? 'Edit Habit' : 'New Habit'}</Text>
+                <Text style={styles.title}>{isEdit ? 'Refine Habit' : 'New Habit'}</Text>
                 <StepIndicator currentStep={step - 1} totalSteps={3} />
               </View>
               <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.8}>
@@ -364,14 +393,14 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
                 />
               )}
               <Button
-                title={step === 3 ? (isEdit ? 'Update Habit' : 'Create Habit') : 'Next'}
+                title={step === 3 ? (isEdit ? 'Update' : 'Launch') : 'Continue'}
                 type="primary"
                 onPress={handleNext}
                 style={styles.footerBtn}
                 disabled={(step === 1 && !name) || (step === 2 && (!unit || !baseline))}
               />
             </View>
-          </View>
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -381,173 +410,181 @@ export const CreateHabitModal = ({ isVisible, onClose, onAdd, onUpdate, initialH
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(26, 28, 30, 0.4)', // Slightly darker, premium overlay
     justifyContent: 'flex-end',
+    backgroundColor: 'transparent',
   },
   backdrop: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
+    ...StyleSheet.absoluteFillObject,
   },
   keyboardView: {
     width: '100%',
+    paddingHorizontal: Spacing.m,
   },
   modalContent: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    padding: Spacing.l,
-    maxHeight: '94%',
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    borderRadius: 32,
+    padding: Spacing.xl,
+    maxHeight: '90%',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.5)',
     ...Platform.select({
       ios: {
-        shadowColor: Colors.textPrimary,
-        shadowOffset: { width: 0, height: -10 },
-        shadowOpacity: 0.08,
-        shadowRadius: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 12 },
+        shadowOpacity: 0.15,
+        shadowRadius: 24,
       },
       android: {
-        elevation: 20,
+        elevation: 12,
       },
     }),
   },
   grabHandle: {
-    width: 40,
+    width: 36,
     height: 4,
     backgroundColor: Colors.border,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: Spacing.m,
+    marginBottom: Spacing.l,
+    opacity: 0.6,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: Spacing.xl,
-    marginTop: Spacing.s,
   },
   headerLeft: {
     flex: 1,
   },
   title: {
-    ...Typography.title, // Fixed: use Spread after Typography.title if it exists
+    ...Typography.title,
     color: Colors.textPrimary,
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
-    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   closeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.background,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.04)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   indicatorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    width: 140,
-    marginTop: 4,
+    gap: 8,
+    marginTop: 12,
   },
-  indicatorDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.border,
-  },
-  indicatorDotActive: {
-    width: 28,
-    backgroundColor: Colors.brand,
-  },
-  indicatorDotCompleted: {
-    backgroundColor: Colors.brand,
-  },
-  indicatorLine: {
+  indicatorSegment: {
     flex: 1,
-    height: 3,
-    backgroundColor: Colors.border,
-    borderRadius: 1.5,
+    height: 4,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  indicatorLineActive: {
+  indicatorBar: {
+    height: '100%',
+    width: '0%',
+    backgroundColor: Colors.brand,
+    borderRadius: 2,
+  },
+  indicatorBarActive: {
+    width: '100%',
+  },
+  indicatorBarCompleted: {
     backgroundColor: Colors.brand,
   },
   scrollContent: {
     paddingBottom: Spacing.xl,
   },
   stepContent: {
-    gap: Spacing.xl,
+    gap: Spacing.xxl,
+  },
+  sectionHeader: {
+    gap: 4,
   },
   sectionTitle: {
     ...Typography.heading,
-    fontSize: 18,
+    fontSize: 20,
     color: Colors.textPrimary,
-    fontWeight: '700',
-    marginBottom: -Spacing.s,
+    fontWeight: '800',
+  },
+  sectionSubtitle: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    opacity: 0.7,
   },
   inputGroup: {
-    gap: Spacing.m,
+    gap: 12,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   label: {
     ...Typography.label,
     color: Colors.textPrimary,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 14,
+    letterSpacing: 0.2,
   },
   input: {
-    backgroundColor: Colors.background,
-    borderRadius: 18,
-    paddingHorizontal: Spacing.l,
-    paddingVertical: Spacing.m,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 20,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.l,
     ...Typography.body,
-    fontSize: 16,
+    fontSize: 17,
     color: Colors.textPrimary,
-    minHeight: 58,
-    borderWidth: 2,
+    minHeight: 64,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: 18,
-    paddingHorizontal: Spacing.l,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 20,
+    paddingHorizontal: Spacing.xl,
     gap: 12,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   inlineInput: {
     flex: 1,
-    paddingVertical: Spacing.m,
+    paddingVertical: Spacing.l,
     ...Typography.body,
-    fontSize: 16,
+    fontSize: 17,
     color: Colors.textPrimary,
   },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.m,
+    gap: 10,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 24,
-    backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderColor: Colors.border,
+    paddingHorizontal: 20,
+    borderRadius: 100,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: Colors.brandLight,
+    backgroundColor: 'rgba(78, 205, 196, 0.12)',
     borderColor: Colors.brand,
   },
   chipText: {
     ...Typography.label,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.textSecondary,
     fontWeight: '600',
   },
@@ -557,33 +594,30 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    paddingTop: Spacing.l,
-    paddingBottom: Platform.OS === 'ios' ? Spacing.xl : Spacing.l,
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    marginTop: Spacing.s,
+    paddingTop: Spacing.xl,
+    backgroundColor: 'transparent',
+    gap: Spacing.m,
   },
   footerBtn: {
     flex: 1,
-    height: 56,
+    height: 60,
+    borderRadius: 20,
   },
   backBtn: {
-    marginRight: Spacing.m,
+    flex: 0.4,
   },
   daysRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 2,
   },
   dayCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.background,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.03)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   dayCircleActive: {
@@ -596,7 +630,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   dayTextActive: {
-    color: Colors.surface,
+    color: '#FFF',
   },
 });
 

@@ -18,7 +18,7 @@ export const EXPOSURE_TEMPLATES: ExposureTemplate[] = [
     id: 'tpl_local_walk',
     goal: 'Walk around the block',
     description: 'Build confidence leaving home with gradual distance increases.',
-    icon: '🚶',
+    icon: 'walk',
     steps: [
       { name: 'Step outside front door', description: 'Open the door and stand on the threshold for 2 minutes.', initial_suds_estimate: 4, difficulty_value: 2, difficulty_unit: 'minutes', location_hint: 'Your front door' },
       { name: 'Walk to end of driveway', description: 'Walk to the street edge and return.', initial_suds_estimate: 5, difficulty_value: 5, difficulty_unit: 'minutes', location_hint: 'Your driveway/building entrance' },
@@ -31,7 +31,7 @@ export const EXPOSURE_TEMPLATES: ExposureTemplate[] = [
     id: 'tpl_shop',
     goal: 'Visit a local shop',
     description: 'Progress from observing a shop exterior to completing a purchase.',
-    icon: '🏪',
+    icon: 'store',
     steps: [
       { name: 'View shop from outside', description: 'Stand near the shop entrance for 3 minutes without entering.', initial_suds_estimate: 4, difficulty_value: 3, difficulty_unit: 'minutes', location_hint: 'Shop exterior' },
       { name: 'Enter and immediately leave', description: 'Step inside, count to 10, then leave calmly.', initial_suds_estimate: 6, difficulty_value: 1, difficulty_unit: 'minutes', location_hint: 'Inside shop entrance' },
@@ -43,7 +43,7 @@ export const EXPOSURE_TEMPLATES: ExposureTemplate[] = [
     id: 'tpl_transport',
     goal: 'Use public transport',
     description: 'Build confidence using buses or trains progressively.',
-    icon: '🚌',
+    icon: 'bus',
     steps: [
       { name: 'Sit at a bus stop', description: 'Sit at the stop for 5 minutes without boarding.', initial_suds_estimate: 4, difficulty_value: 5, difficulty_unit: 'minutes', location_hint: 'Nearest bus stop' },
       { name: 'Board and alight at next stop', description: 'Ride one stop and get off.', initial_suds_estimate: 7, difficulty_value: 1, difficulty_unit: 'steps', location_hint: 'Local bus route' },
@@ -55,7 +55,7 @@ export const EXPOSURE_TEMPLATES: ExposureTemplate[] = [
     id: 'tpl_park',
     goal: 'Spend time in a park or open space',
     description: 'Gradually increase time and distance from exit points in open spaces.',
-    icon: '🌳',
+    icon: 'tree',
     steps: [
       { name: 'Sit on nearest bench to entrance', description: 'Sit at the park entrance bench for 5 minutes.', initial_suds_estimate: 4, difficulty_value: 5, difficulty_unit: 'minutes', location_hint: 'Park entrance' },
       { name: 'Walk 100m into park', description: 'Walk to a point 100m from the entrance and return.', initial_suds_estimate: 5, difficulty_value: 100, difficulty_unit: 'meters', location_hint: 'Inside park' },
@@ -67,7 +67,7 @@ export const EXPOSURE_TEMPLATES: ExposureTemplate[] = [
     id: 'tpl_custom',
     goal: 'Custom goal',
     description: 'Define your own exposure ladder from scratch.',
-    icon: '✏️',
+    icon: 'pencil',
     steps: [],
   },
 ];

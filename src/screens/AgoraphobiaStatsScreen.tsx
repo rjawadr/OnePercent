@@ -117,7 +117,7 @@ const SUDSTrendChart = ({ sessions, resets }: { sessions: any[], resets: any[] }
              <Text style={styles.legendText}>SUDS</Text>
          </View>
          <View style={styles.legendItem}>
-             <Text style={{color: Colors.amber, fontSize: 14, fontWeight: '700', marginRight: 4}}>↺</Text>
+             <Icon name="rotate-ccw" size={12} color={Colors.amber} style={{ marginRight: 4 }} />
              <Text style={styles.legendText}>Target Reset</Text>
          </View>
       </View>

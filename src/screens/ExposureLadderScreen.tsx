@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Animated as RNAnimated, Modal } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { ExposureStepCard } from '../components/agoraphobia/ExposureStepCard';
@@ -167,7 +168,9 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
                 onPress={() => handleSelectTemplate(t)}
                 style={({ pressed }) => [styles.templateCard, pressed && styles.pressed]}
               >
-                <Text style={styles.templateIcon}>{t.icon}</Text>
+                <View style={styles.templateIconContainer}>
+                  <MaterialCommunityIcons name={t.icon as any} size={28} color={Colors.brand} />
+                </View>
                 <View style={styles.templateContent}>
                   <Text style={styles.templateGoal}>{t.goal}</Text>
                   <Text style={styles.templateDesc}>{t.description}</Text>
@@ -213,7 +216,7 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
                 {steps.filter(s => s.is_mastered).length}/{steps.length} mastered
               </Text>
               <Text style={styles.helpfulNote}>
-                💡 Long press any step to reset its target
+                Long press any step to reset its target
               </Text>
             </View>
 
@@ -246,7 +249,7 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
           <RNAnimated.View 
             style={[
               styles.toastContainer,
-              { bottom: 40 + insets.bottom, opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }] }
+              { bottom: 64 + Math.max(insets.bottom, 12) + 16, opacity: toastAnim, transform: [{ translateY: toastAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) }] }
             ]}
           >
             <BlurView style={styles.toastBlur} blurType="light" blurAmount={15} overlayColor="rgba(255, 255, 255, 0.7)" />
@@ -291,7 +294,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.xl,
-    paddingBottom: 120,
+    paddingBottom: 40,
   },
   templateIntro: {
     ...Typography.body,
@@ -312,6 +315,14 @@ const styles = StyleSheet.create({
   pressed: {
     transform: [{ scale: 0.98 }],
     opacity: 0.9,
+  },
+  templateIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: Colors.brandLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   templateIcon: {
     fontSize: 32,

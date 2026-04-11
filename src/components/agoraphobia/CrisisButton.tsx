@@ -94,7 +94,7 @@ export const CrisisBanner = ({ onPress }: { onPress: () => void }) => (
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 100, // Increased to stay above the new bottom tab bar
     right: 24,
     zIndex: 100,
   },

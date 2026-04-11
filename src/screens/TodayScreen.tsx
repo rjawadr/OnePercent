@@ -239,7 +239,7 @@ export const TodayScreen = () => {
         }}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={habits.length === 0 ? renderEmpty : (allCompletedOnActiveDate ? <AllDoneState streakCount={totalStreak} totalHabits={habits.length} /> : null)}
-        contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 120 }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 80 }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.brand} />

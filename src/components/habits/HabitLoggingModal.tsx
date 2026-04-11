@@ -26,6 +26,8 @@ import Animated, {
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../theme';
 import { Habit } from '../../models/Habit';
 
+import { BlurView } from '@react-native-community/blur';
+
 const { width } = Dimensions.get('window');
 
 interface HabitLoggingModalProps {
@@ -34,6 +36,27 @@ interface HabitLoggingModalProps {
   onClose: () => void;
   bottomSheetRef: React.RefObject<BottomSheet>;
 }
+
+const GlassBackground = ({ style, ...props }: any) => (
+  <View style={[style, { overflow: 'hidden', borderRadius: 32 }]}>
+    <BlurView
+      style={StyleSheet.absoluteFill}
+      blurType="dark"
+      blurAmount={20}
+      reducedTransparencyFallbackColor="black"
+    />
+    <View 
+      style={[
+        StyleSheet.absoluteFill, 
+        { 
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          borderWidth: 1.5,
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+        }
+      ]} 
+    />
+  </View>
+);
 
 export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: HabitLoggingModalProps) {
   const [value, setValue] = useState(habit.current_target.toString());
@@ -71,7 +94,7 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
       {...props}
       disappearsOnIndex={-1}
       appearsOnIndex={0}
-      opacity={0.7}
+      opacity={0.5}
       enableTouchThrough={false}
     />
   );
@@ -88,11 +111,11 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
-      backgroundStyle={styles.sheetBg}
+      backgroundComponent={GlassBackground}
       handleIndicatorStyle={styles.handle}
-      bottomInset={0}
-      detached={false}
-      style={styles.sheetContainer}
+      bottomInset={64 + Math.max(insets.bottom, 12) + 16}
+      detached={true}
+      style={[styles.sheetContainer, { marginHorizontal: Spacing.m }]}
       keyboardBehavior="extend"
       keyboardBlurBehavior="restore"
     >
@@ -106,14 +129,14 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
         {/* Header Section */}
         <Animated.View entering={FadeInDown.delay(100)} style={styles.header}>
           <View style={styles.headerMain}>
-            <View style={[styles.iconStage, { backgroundColor: (habit.color || Colors.brand) + '15' }]}>
-               <Text style={styles.iconEmoji}>{habit.icon || '🔥'}</Text>
+            <View style={[styles.iconStage, { backgroundColor: (habit.color || Colors.brand) + '20', borderColor: (habit.color || Colors.brand) + '40' }]}>
+               <Icon name={habit.icon || 'sparkles'} size={28} color={habit.color || Colors.brand} />
             </View>
             <View style={styles.titleBlock}>
               <Text style={styles.title} numberOfLines={1}>{habit.name}</Text>
               <View style={styles.identityRow}>
-                <Icon name="medal" size={12} color={Colors.amber} />
-                <Text style={styles.identityText}>{habit.identity_statement || 'Striving for 1% better'}</Text>
+                <Icon name="medal" size={14} color={Colors.amber} />
+                <Text style={styles.identityText}>{habit.identity_statement || 'Building the future self'}</Text>
               </View>
             </View>
           </View>
@@ -121,11 +144,11 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
             style={styles.closeButton} 
             onPress={() => bottomSheetRef.current?.close()}
           >
-            <Icon name="close" size={20} color={Colors.textSecondary} />
+            <Icon name="close" size={20} color="rgba(255,255,255,0.6)" />
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Progress Control - The "Engine" */}
+        {/* Progress Control */}
         <Animated.View entering={FadeInDown.delay(200)} style={styles.controllerCard}>
           <View style={styles.controllerHeader}>
              <Text style={styles.controllerLabel}>SESSION PROGRESS</Text>
@@ -141,7 +164,7 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
               onPress={() => adjustValue(-(habit.increment || 1))}
               activeOpacity={0.7}
             >
-              <Icon name="minus" size={28} color={Colors.textPrimary} />
+              <Icon name="minus" size={28} color="#fff" />
             </TouchableOpacity>
 
             <Animated.View style={[styles.valueDisplay, valueScaleStyle]}>
@@ -152,6 +175,7 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
                 keyboardType="decimal-pad"
                 selectionColor={Colors.brand}
                 placeholder="0"
+                placeholderTextColor="rgba(255,255,255,0.2)"
               />
               <Text style={styles.unitLabel}>{habit.unit || 'units'}</Text>
             </Animated.View>
@@ -161,7 +185,7 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
               onPress={() => adjustValue(habit.increment || 1)}
               activeOpacity={0.7}
             >
-              <Icon name="plus" size={28} color={Colors.surface} />
+              <Icon name="plus" size={28} color="#fff" />
             </TouchableOpacity>
           </View>
 
@@ -185,7 +209,7 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
         {/* Notes & Reflections */}
         <Animated.View entering={FadeInDown.delay(300)} style={styles.reflectionSection}>
            <View style={styles.sectionHeader}>
-              <Icon name="book-open-variant" size={16} color={Colors.textTertiary} />
+              <Icon name="book-open-variant" size={16} color="rgba(255,255,255,0.5)" />
               <Text style={styles.sectionTitle}>SESSION REFLECTION</Text>
            </View>
            <TextInput
@@ -193,10 +217,11 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
              value={notes}
              onChangeText={setNotes}
              placeholder="How was the session? Did you feel the 1% growth?"
-             placeholderTextColor={Colors.textTertiary}
+             placeholderTextColor="rgba(255,255,255,0.3)"
              multiline
              numberOfLines={3}
              maxLength={200}
+             selectionColor={Colors.brand}
            />
         </Animated.View>
 
@@ -230,13 +255,8 @@ export function HabitLoggingModal({ habit, onLog, onClose, bottomSheetRef }: Hab
 }
 
 const styles = StyleSheet.create({
-  sheetBg: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: BorderRadius.xxl,
-    borderTopRightRadius: BorderRadius.xxl,
-  },
   handle: {
-    backgroundColor: Colors.border,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     width: 40,
     height: 4,
     marginTop: 12,
@@ -263,14 +283,10 @@ const styles = StyleSheet.create({
   iconStage: {
     width: 60,
     height: 60,
-    borderRadius: BorderRadius.xl,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
-  },
-  iconEmoji: {
-    fontSize: 28,
   },
   titleBlock: {
     flex: 1,
@@ -279,7 +295,7 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.heading,
     fontSize: 22,
-    color: Colors.textPrimary,
+    color: '#fff',
     fontWeight: '900',
   },
   identityRow: {
@@ -289,7 +305,7 @@ const styles = StyleSheet.create({
   },
   identityText: {
     ...Typography.micro,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -297,17 +313,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: Colors.background,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   controllerCard: {
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.xxl,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 28,
     padding: Spacing.xl,
     gap: Spacing.xl,
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   controllerHeader: {
     flexDirection: 'row',
@@ -316,24 +332,24 @@ const styles = StyleSheet.create({
   },
   controllerLabel: {
     ...Typography.micro,
-    color: Colors.textTertiary,
+    color: 'rgba(255,255,255,0.4)',
     fontWeight: '800',
     letterSpacing: 1.2,
   },
   targetBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(78, 205, 196, 0.15)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: BorderRadius.l,
+    borderRadius: 12,
     gap: 6,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: 'rgba(78, 205, 196, 0.3)',
   },
   targetText: {
     ...Typography.micro,
-    color: Colors.textPrimary,
+    color: Colors.brand,
     fontWeight: '900',
     fontSize: 10,
   },
@@ -343,15 +359,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   stepBtn: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    backgroundColor: Colors.surface,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.soft,
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   stepBtnPrimary: {
     backgroundColor: Colors.brand,
@@ -360,20 +375,20 @@ const styles = StyleSheet.create({
   valueDisplay: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 120,
+    minWidth: 140,
   },
   valueInput: {
-    fontSize: 56,
+    fontSize: 64,
     fontWeight: '900',
-    color: Colors.textPrimary,
+    color: '#fff',
     textAlign: 'center',
     padding: 0,
-    lineHeight: 64,
+    lineHeight: 72,
   },
   unitLabel: {
     ...Typography.micro,
-    color: Colors.textSecondary,
-    fontSize: 12,
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
     fontWeight: '800',
     textTransform: 'uppercase',
     marginTop: -4,
@@ -382,28 +397,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.l,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   quickAction: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
   },
   quickActionText: {
     ...Typography.micro,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.6)',
     fontWeight: '900',
-    fontSize: 11,
-    letterSpacing: 0.5,
+    fontSize: 12,
+    letterSpacing: 0.8,
   },
   actionDivider: {
     width: 1,
-    height: 20,
-    backgroundColor: Colors.borderLight,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   reflectionSection: {
     gap: 12,
@@ -416,62 +431,57 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...Typography.micro,
-    color: Colors.textTertiary,
+    color: 'rgba(255,255,255,0.4)',
     fontWeight: '900',
     letterSpacing: 1.5,
   },
   reflectionInput: {
-    backgroundColor: Colors.background,
-    borderRadius: BorderRadius.xl,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 24,
     padding: Spacing.xl,
     ...Typography.body,
-    color: Colors.textPrimary,
-    minHeight: 100,
+    color: '#fff',
+    minHeight: 120,
     textAlignVertical: 'top',
     borderWidth: 1.5,
-    borderColor: Colors.borderLight,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   insightBox: {
     flexDirection: 'row',
-    backgroundColor: Colors.brandLight,
-    padding: Spacing.l,
-    borderRadius: BorderRadius.xl,
+    backgroundColor: 'rgba(78, 205, 196, 0.1)',
+    padding: Spacing.xl,
+    borderRadius: 24,
     gap: 16,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.brand + '20',
+    borderWidth: 1.5,
+    borderColor: 'rgba(78, 205, 196, 0.2)',
   },
   insightIconBox: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.surface,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.soft,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   insightText: {
     ...Typography.caption,
-    color: Colors.textPrimary,
+    color: 'rgba(255,255,255,0.85)',
     flex: 1,
-    lineHeight: 20,
-    fontWeight: '500',
-  },
-  confirmBtn: {
-    borderRadius: BorderRadius.full,
-    ...Shadows.elevated,
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    lineHeight: 22,
+    fontWeight: '600',
   },
   confirmBtnContainer: {
-     borderRadius: BorderRadius.full,
+     borderRadius: 32,
      overflow: 'hidden',
      ...Shadows.elevated,
   },
   confirmBtnInner: {
     backgroundColor: Colors.brand,
-    borderRadius: BorderRadius.full,
-    paddingVertical: 20,
+    borderRadius: 32,
+    paddingVertical: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -482,6 +492,6 @@ const styles = StyleSheet.create({
     color: Colors.surface,
     fontSize: 18,
     fontWeight: '900',
-    letterSpacing: 1.5,
+    letterSpacing: 2,
   },
 });

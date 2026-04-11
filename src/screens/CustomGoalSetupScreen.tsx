@@ -19,6 +19,7 @@ LogBox.ignoreLogs([
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../theme';
@@ -47,7 +48,7 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
   );
 }
 
-const EMOJI_OPTIONS = ['🚶', '🏪', '🌳', '🚌', '☕', '🏋️', '🏠', '✏️'];
+const ICON_OPTIONS = ['walk', 'store', 'tree', 'bus', 'coffee', 'weight-lifter', 'home', 'pencil'];
 const AVAILABLE_SIGNALS = ['Phone', 'Water bottle', 'Medication', 'Companion', 'Headphones'];
 
 export const CustomGoalSetupScreen = ({ navigation }: any) => {
@@ -55,7 +56,7 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
 
   const [goalName, setGoalName] = useState('');
   const [goalDescription, setGoalDescription] = useState('');
-  const [goalIcon, setGoalIcon] = useState('✏️');
+  const [goalIcon, setGoalIcon] = useState('pencil');
   const [startingLocation, setStartingLocation] = useState('');
   const [finalLocation, setFinalLocation] = useState('');
   
@@ -181,13 +182,17 @@ export const CustomGoalSetupScreen = ({ navigation }: any) => {
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Icon</Text>
                   <View style={styles.emojiRow}>
-                    {EMOJI_OPTIONS.map(emoji => (
+                    {ICON_OPTIONS.map(iconName => (
                       <TouchableOpacity
-                        key={emoji}
-                        style={[styles.emojiBtn, goalIcon === emoji && styles.emojiBtnActive]}
-                        onPress={() => setGoalIcon(emoji)}
+                        key={iconName}
+                        style={[styles.emojiBtn, goalIcon === iconName && styles.emojiBtnActive]}
+                        onPress={() => setGoalIcon(iconName)}
                       >
-                        <Text style={styles.emojiText}>{emoji}</Text>
+                        <MaterialCommunityIcons 
+                          name={iconName as any} 
+                          size={24} 
+                          color={goalIcon === iconName ? Colors.brand : Colors.textSecondary} 
+                        />
                       </TouchableOpacity>
                     ))}
                   </View>

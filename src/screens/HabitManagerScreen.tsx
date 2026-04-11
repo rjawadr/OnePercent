@@ -183,7 +183,7 @@ export const HabitManagerScreen = () => {
         <View style={styles.rowMain}>
           <View style={[styles.iconContainer, { backgroundColor: (item.color || Colors.brand) + '12' }]}>
             <View style={[styles.iconOverlay, { borderColor: (item.color || Colors.brand) + '25' }]} />
-            <Text style={styles.iconEmoji}>{item.icon || '✨'}</Text>
+            <Icon name={item.icon || 'sparkles'} size={28} color={item.color || Colors.brand} />
           </View>
           
           <View style={styles.habitInfo}>
@@ -304,7 +304,7 @@ export const HabitManagerScreen = () => {
               style={[
                 styles.toastContainer,
                 {
-                  bottom: 40 + tabBarHeight + insets.bottom,
+                  bottom: 64 + Math.max(insets.bottom, 12) + 16,
                   opacity: confirmAnim,
                   transform: [{
                     translateY: confirmAnim.interpolate({

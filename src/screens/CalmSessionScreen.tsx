@@ -128,7 +128,8 @@ export const CalmSessionScreen = () => {
           <Text style={styles.cycleChipText}>
             {state.phase !== 'COMPLETE'
               ? `${state.cycle} / ${defaultBreathConfig.cycles}`
-              : '✓ Done'}
+              : <Icon name="check" size={12} color={Colors.brand} />}
+            {state.phase === 'COMPLETE' && ' Done'}
           </Text>
         </View>
       </View>

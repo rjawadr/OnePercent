@@ -60,10 +60,24 @@ export const SessionReviewScreen = ({ navigation, route }: any) => {
 
         <Animated.View entering={FadeInDown.delay(400)} style={styles.card}>
           <Text style={styles.cardLabel}>DETAILS</Text>
-          <Text style={styles.detail}>⏱ Duration: {fmtDur(session.duration_seconds)}</Text>
-          <Text style={styles.detail}>🎯 Difficulty: {session.difficulty_at_session} {step.difficulty_unit}</Text>
-          {session.next_difficulty && <Text style={[styles.detail, {color: Colors.brand}]}>📈 Next target: {session.next_difficulty} {step.difficulty_unit}</Text>}
-          <Text style={styles.detail}>🏅 Mastery: {step.mastery_count}/2</Text>
+          <View style={styles.detailRow}>
+            <Icon name="clock" size={16} color={Colors.textSecondary} />
+            <Text style={styles.detail}>Duration: {fmtDur(session.duration_seconds)}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Icon name="target" size={16} color={Colors.textSecondary} />
+            <Text style={styles.detail}>Difficulty: {session.difficulty_at_session} {step.difficulty_unit}</Text>
+          </View>
+          {session.next_difficulty && (
+            <View style={styles.detailRow}>
+              <Icon name="trending-up" size={16} color={Colors.brand} />
+              <Text style={[styles.detail, {color: Colors.brand}]}>Next target: {session.next_difficulty} {step.difficulty_unit}</Text>
+            </View>
+          )}
+          <View style={styles.detailRow}>
+            <Icon name="award" size={16} color={Colors.textSecondary} />
+            <Text style={styles.detail}>Mastery: {step.mastery_count}/2</Text>
+          </View>
         </Animated.View>
 
         {session.notes && <Animated.View entering={FadeInDown.delay(500)} style={styles.card}><Text style={styles.cardLabel}>NOTES</Text><Text style={styles.notes}>{session.notes}</Text></Animated.View>}
@@ -96,7 +110,8 @@ const styles = StyleSheet.create({
   sudsSub: { ...Typography.micro, color: Colors.textTertiary, marginTop: 2 },
   changeBadge: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, justifyContent: 'center', marginTop: Spacing.m, backgroundColor: Colors.brandLight, paddingVertical: Spacing.xs, paddingHorizontal: Spacing.m, borderRadius: 12, alignSelf: 'center' },
   changeText: { ...Typography.caption, color: Colors.brand, fontWeight: '600' },
-  detail: { ...Typography.body, color: Colors.textPrimary, marginBottom: Spacing.s },
+  detailRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.s, marginBottom: Spacing.s },
+  detail: { ...Typography.body, color: Colors.textPrimary },
   notes: { ...Typography.body, color: Colors.textSecondary, lineHeight: 22 },
   actions: { gap: Spacing.m, marginTop: Spacing.l },
 });

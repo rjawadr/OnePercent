@@ -1,16 +1,57 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from '@react-native-community/blur';
+import LottieView from 'lottie-react-native';
+import Animated, { 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring,
+  interpolate,
+  Extrapolate
+} from 'react-native-reanimated';
 import { Colors, Typography, Spacing, Shadows } from '../../theme';
+
+const { width } = Dimensions.get('window');
+const TAB_WIDTH = width / 5;
 
 export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
+  const activeIndex = state.index;
+  const translateX = useSharedValue(activeIndex * TAB_WIDTH);
+
+  useEffect(() => {
+    translateX.value = withSpring(activeIndex * TAB_WIDTH, {
+      damping: 20,
+      stiffness: 150,
+    });
+  }, [activeIndex]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom || Spacing.m }]}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      {Platform.OS === 'ios' ? (
+        <BlurView
+          style={StyleSheet.absoluteFill}
+          blurType="light"
+          blurAmount={20}
+          reducedTransparencyFallbackColor="white"
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(255, 255, 255, 0.92)' }]} />
+      )}
+      
+      <View style={styles.topBorder} />
+
       <View style={styles.content}>
+        {/* Active Indicator Pill */}
+        <Animated.View style={[styles.activePill, indicatorStyle]} />
+
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
@@ -28,22 +69,19 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
           };
 
           let iconName = 'home-variant';
-          let label = route.name;
 
+          // Assign icons based on route name with fallback-safe names
           if (route.name === 'Today') {
-            iconName = 'calendar-check';
+            iconName = isFocused ? 'calendar-check' : 'calendar-check-outline';
           } else if (route.name === 'Stats') {
-            iconName = 'chart-timeline-variant';
-            label = 'Progress';
+            iconName = isFocused ? 'chart-box' : 'chart-box-outline';
           } else if (route.name === 'Therapy') {
-            iconName = 'leaf';
+            // Replaced 'leaf' with 'sprout' to resolve potential '?' issues
+            iconName = isFocused ? 'sprout' : 'sprout-outline';
           } else if (route.name === 'Techniques') {
-            iconName = 'meditation';
-            label = 'Techniques';
-          } else if (route.name === 'Social') {
-            iconName = 'account-group';
+            iconName = isFocused ? 'meditation' : 'meditation';
           } else if (route.name === 'Settings') {
-            iconName = 'cog';
+            iconName = isFocused ? 'cog' : 'cog-outline';
           }
 
           return (
@@ -53,27 +91,39 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
               style={styles.tabItem}
               activeOpacity={0.7}
             >
-              <View style={[
-                styles.iconContainer,
-                isFocused && styles.iconContainerActive
-              ]}>
-                <Icon
-                  name={iconName}
-                  size={24}
-                  color={isFocused ? Colors.brand : Colors.textTertiary}
-                />
-              </View>
-              <Text style={[
-                styles.label,
-                isFocused && styles.labelActive
-              ]}>
-                {label}
-              </Text>
+              <AnimatedIcon
+                isFocused={isFocused}
+                name={iconName}
+                color={isFocused ? Colors.brand : Colors.textTertiary}
+              />
             </TouchableOpacity>
           );
         })}
       </View>
     </View>
+  );
+};
+
+// Sub-component for animated icons to handle scaling
+const AnimatedIcon = ({ isFocused, name, color }: { isFocused: boolean; name: string; color: string }) => {
+  const scale = useSharedValue(isFocused ? 1.2 : 1);
+  
+  useEffect(() => {
+    scale.value = withSpring(isFocused ? 1.2 : 1, {
+      damping: 12,
+      stiffness: 120,
+    });
+  }, [isFocused]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: withSpring(isFocused ? 1 : 0.7),
+  }));
+
+  return (
+    <Animated.View style={[styles.iconWrapper, animatedStyle]}>
+      <Icon name={name} size={26} color={color} />
+    </Animated.View>
   );
 };
 
@@ -84,45 +134,53 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: 'transparent',
-    elevation: 0,
+    elevation: 8,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: 'hidden',
+    ...Shadows.elevated,
+  },
+  topBorder: {
+    height: 1,
+    backgroundColor: Colors.borderLight,
+    width: '100%',
   },
   content: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.s,
-    borderRadius: 32,
-    height: 72,
+    height: 64,
     alignItems: 'center',
     justifyContent: 'space-around',
-    ...Shadows.elevated,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
+    width: TAB_WIDTH,
+    height: '100%',
   },
-  iconContainer: {
-    width: 44,
-    height: 32,
-    borderRadius: 16,
+  iconWrapper: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
-  iconContainerActive: {
-    backgroundColor: Colors.brandLight,
+  activePill: {
+    position: 'absolute',
+    top: 10,
+    left: 8,
+    width: TAB_WIDTH - 16,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: Colors.brand + '15', // Ultra-subtle brand tint
+    borderWidth: 1,
+    borderColor: Colors.brand + '30',
+  },
+  lottieIndicator: {
+    display: 'none',
   },
   label: {
-    ...Typography.micro,
-    color: Colors.textTertiary,
-    fontSize: 10,
-    fontWeight: '600',
+    display: 'none',
   },
   labelActive: {
-    color: Colors.brand,
-    fontWeight: '800',
+    display: 'none',
   },
 });

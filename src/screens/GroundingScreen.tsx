@@ -102,7 +102,7 @@ export const GroundingScreen = () => {
           </View>
         ) : (
           <View style={[styles.stepChip, { backgroundColor: Colors.brandLight }]}>
-            <Text style={[styles.stepChipText, { color: Colors.brand }]}>✓</Text>
+            <Icon name="check" size={12} color={Colors.brand} />
           </View>
         )}
       </View>
@@ -185,7 +185,7 @@ export const GroundingScreen = () => {
                 }}
               >
                 <Text style={styles.ctaText}>
-                  {state.currentStepIndex < state.totalSteps - 1 ? `Done → Next sense` : 'Finish →'}
+                  {state.currentStepIndex < state.totalSteps - 1 ? 'Next sense' : 'Finish'}
                 </Text>
                 <Icon name="arrow-right" size={18} color="#fff" />
               </AnimatedPressable>

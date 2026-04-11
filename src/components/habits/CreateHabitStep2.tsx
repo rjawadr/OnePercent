@@ -24,6 +24,9 @@ const FREQUENCY_OPTIONS: { value: ImprovementFrequency; label: string }[] = [
   { value: 'none', label: 'None' },
 ];
 
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
 export const CreateHabitStep2 = ({
   baseline,
   setBaseline,
@@ -39,11 +42,17 @@ export const CreateHabitStep2 = ({
   const numBaseline = parseFloat(baseline) || 0;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Set your baseline</Text>
+    <Animated.View entering={FadeInDown.duration(400)} style={styles.container}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Set your baseline</Text>
+        <Text style={styles.sectionSubtitle}>Start small. Win big.</Text>
+      </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>How much can I do now?</Text>
+        <View style={styles.labelRow}>
+          <Icon name="rocket-outline" size={18} color={Colors.brand} />
+          <Text style={styles.label}>How much can I do now?</Text>
+        </View>
         <View style={styles.fieldRow}>
           <TextInput
             style={[styles.input, styles.flex1]}
@@ -52,19 +61,24 @@ export const CreateHabitStep2 = ({
             keyboardType="decimal-pad"
             placeholder="5"
             placeholderTextColor={Colors.textTertiary}
+            selectionColor={Colors.brand}
           />
           <TextInput
-            style={[styles.input, styles.flex1]}
+            style={[styles.input, styles.flex2]}
             value={unit}
             onChangeText={setUnit}
             placeholder="Pages"
             placeholderTextColor={Colors.textTertiary}
+            selectionColor={Colors.brand}
           />
         </View>
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>My goal (optional)</Text>
+        <View style={styles.labelRow}>
+          <Icon name="flag-checkered" size={18} color={Colors.brand} />
+          <Text style={styles.label}>End Goal (Optional)</Text>
+        </View>
         <TextInput
           style={styles.input}
           value={goal}
@@ -72,11 +86,15 @@ export const CreateHabitStep2 = ({
           keyboardType="decimal-pad"
           placeholder="e.g. 100"
           placeholderTextColor={Colors.textTertiary}
+          selectionColor={Colors.brand}
         />
       </View>
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Improvement Frequency</Text>
+        <View style={styles.labelRow}>
+          <Icon name="trending-up" size={18} color={Colors.brand} />
+          <Text style={styles.label}>Improvement Frequency</Text>
+        </View>
         <View style={styles.chipRow}>
           {FREQUENCY_OPTIONS.map(opt => (
             <TouchableOpacity
@@ -100,7 +118,10 @@ export const CreateHabitStep2 = ({
       />
 
       <View style={styles.inputGroup}>
-        <Text style={styles.label}>Identity Statement (Optional)</Text>
+        <View style={styles.labelRow}>
+          <Icon name="account-details-outline" size={18} color={Colors.brand} />
+          <Text style={styles.label}>Identity Statement (Optional)</Text>
+        </View>
         <TextInput
           style={[styles.input, styles.multilineInput]}
           value={identity}
@@ -109,76 +130,94 @@ export const CreateHabitStep2 = ({
           placeholderTextColor={Colors.textTertiary}
           multiline
           numberOfLines={3}
+          selectionColor={Colors.brand}
         />
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    gap: Spacing.xl,
+    gap: Spacing.xxl,
+  },
+  sectionHeader: {
+    gap: 4,
   },
   sectionTitle: { 
     ...Typography.heading,
-    fontSize: 18,
+    fontSize: 20,
     color: Colors.textPrimary,
-    fontWeight: '700',
-    marginBottom: -Spacing.s,
+    fontWeight: '800',
+  },
+  sectionSubtitle: {
+    ...Typography.body,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    opacity: 0.7,
   },
   inputGroup: {
-    gap: Spacing.m,
+    gap: 12,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   label: { 
     ...Typography.label,
     color: Colors.textPrimary,
     fontWeight: '700',
-    fontSize: 15,
+    fontSize: 14,
+    letterSpacing: 0.2,
   },
   fieldRow: { 
     flexDirection: 'row', 
-    gap: Spacing.m,
+    gap: 12,
   },
   flex1: { 
     flex: 1 
   },
+  flex2: {
+    flex: 1.5,
+  },
   input: {
-    backgroundColor: Colors.background,
-    borderRadius: 18,
-    paddingHorizontal: Spacing.l,
-    paddingVertical: Spacing.m,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderRadius: 20,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.l,
     ...Typography.body,
-    fontSize: 16,
+    fontSize: 17,
     color: Colors.textPrimary,
-    minHeight: 58,
-    borderWidth: 2,
+    minHeight: 64,
+    borderWidth: 1.5,
     borderColor: 'transparent',
   },
   multilineInput: {
-    minHeight: 100,
+    minHeight: 120,
     textAlignVertical: 'top',
-    paddingTop: Spacing.m,
+    paddingTop: Spacing.l,
   },
   chipRow: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 
-    gap: Spacing.m,
+    gap: 10,
   },
   chip: { 
     paddingVertical: 12, 
-    paddingHorizontal: 18, 
-    borderRadius: 24, 
-    backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderColor: Colors.border,
+    paddingHorizontal: 20, 
+    borderRadius: 100, 
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   chipActive: { 
-    backgroundColor: Colors.brandLight, 
+    backgroundColor: 'rgba(78, 205, 196, 0.12)', 
     borderColor: Colors.brand,
   },
   chipText: { 
     ...Typography.label,
-    fontSize: 14,
+    fontSize: 15,
     color: Colors.textSecondary, 
     fontWeight: '600' 
   },
