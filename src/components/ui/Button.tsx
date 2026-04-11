@@ -9,15 +9,25 @@ import {
   ActivityIndicator 
 } from 'react-native';
 import { Colors, BorderRadius, Spacing, Shadows, Typography } from '../../theme';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  interpolate, 
+  runOnJS 
+} from 'react-native-reanimated';
+
 
 interface ButtonProps {
   onPress: () => void;
-  title: string;
+  title?: string;
   type?: 'primary' | 'secondary' | 'ghost';
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   loading?: boolean;
   disabled?: boolean;
+  children?: React.ReactNode;
 }
 
 export const Button = ({ 
@@ -27,7 +37,8 @@ export const Button = ({
   style, 
   textStyle,
   loading = false,
-  disabled = false 
+  disabled = false,
+  children
 }: ButtonProps) => {
 
   const getButtonStyle = () => {
@@ -52,19 +63,41 @@ export const Button = ({
     }
   };
 
+  const pressed = useSharedValue(0);
+
+  const tap = Gesture.Tap()
+    .enabled(!disabled && !loading)
+    .onBegin(() => {
+      pressed.set(withTiming(1, { duration: 100 }));
+    })
+    .onFinalize(() => {
+      pressed.set(withTiming(0, { duration: 150 }));
+    })
+    .onEnd(() => {
+      if (onPress) runOnJS(onPress)();
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: interpolate(pressed.get(), [0, 1], [1, 0.96]) }
+    ],
+    opacity: interpolate(pressed.get(), [0, 1], [1, 0.9])
+  }));
+
   return (
-    <TouchableOpacity 
-      onPress={onPress} 
-      style={[styles.button, getButtonStyle(), style, (disabled || loading) && styles.disabled]}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
-    >
-      {loading ? (
-        <ActivityIndicator color={type === 'ghost' ? Colors.brand : '#fff'} />
-      ) : (
-        <Text style={[styles.text, getTextStyle(), textStyle]}>{title}</Text>
-      )}
-    </TouchableOpacity>
+    <GestureDetector gesture={tap}>
+      <Animated.View 
+        style={[styles.button, getButtonStyle(), style, (disabled || loading) && styles.disabled, animatedStyle]}
+      >
+        {loading ? (
+          <ActivityIndicator color={type === 'ghost' ? Colors.brand : '#fff'} />
+        ) : children ? (
+          children
+        ) : (
+          <Text style={[styles.text, getTextStyle(), textStyle]}>{title}</Text>
+        )}
+      </Animated.View>
+    </GestureDetector>
   );
 };
 

@@ -14,8 +14,7 @@ import { MilestoneCelebrationOverlay } from '../components/habits/MilestoneCeleb
 import { calculateConsecutiveMisses } from '../engine/onePercentEngine';
 import { Habit } from '../models/Habit';
 import { format, subDays, isSameDay } from 'date-fns';
-import { useNavigation } from '@react-navigation/native';
-import BottomSheet from '@gorhom/bottom-sheet';
+import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { FadeIn, FadeInDown, Layout as ReanimatedLayout } from 'react-native-reanimated';
@@ -52,16 +51,23 @@ const AllDoneState = ({ streakCount, totalHabits }: { streakCount: number, total
       </View>
     </View>
 
-    <TouchableOpacity style={styles.celebrationButton} activeOpacity={0.8}>
+    <Button 
+      style={[styles.celebrationButton, { paddingVertical: 18 }]} 
+      onPress={() => {}}
+    >
       <Text style={styles.celebrationButtonText}>SHARE JOURNEY</Text>
       <Icon name="share-variant" size={18} color={Colors.surface} />
-    </TouchableOpacity>
+    </Button>
   </Animated.View>
 );
 
 export const TodayScreen = () => {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
+  
+  // Use recommended hook to prevent native back action from desyncing stack state on the root screen
+  usePreventRemove(true, () => {});
+
   const {
     habits, logs, streaks, addHabit, logProgress, initialize, isInitialized,
     pendingMilestone, milestoneHabitId, clearMilestone
@@ -70,8 +76,6 @@ export const TodayScreen = () => {
   const [isCreateVisible, setIsCreateVisible] = useState(false);
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
   const [activeDate, setActiveDate] = useState(new Date());
-
-  const bottomSheetRef = React.useRef<BottomSheet>(null);
 
   useEffect(() => {
     if (!isInitialized) {
@@ -220,13 +224,13 @@ export const TodayScreen = () => {
       <Text style={styles.emptySubtitle}>
         Compound interest follows consistent action.{"\n"}Plant your first behavior today.
       </Text>
-      <TouchableOpacity
+      <Button 
         style={styles.emptyActionBtn}
         onPress={() => setIsCreateVisible(true)}
       >
         <Text style={styles.emptyActionText}>DEFINE FIRST HABIT</Text>
         <Icon name="arrow-right" size={20} color={Colors.surface} />
-      </TouchableOpacity>
+      </Button>
     </Animated.View>
   );
 
@@ -263,7 +267,6 @@ export const TodayScreen = () => {
             setSelectedHabit(null);
           }}
           onClose={() => setSelectedHabit(null)}
-          bottomSheetRef={bottomSheetRef as any}
         />
       )}
 

@@ -29,46 +29,53 @@ import { CustomTabBar } from '../components/ui/CustomTabBar';
 import { Colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
+const TodayStackNav = createNativeStackNavigator();
+const TherapyStackNav = createNativeStackNavigator();
+const SettingsStackNav = createNativeStackNavigator();
+const TechniquesStackNav = createNativeStackNavigator();
 
 const TodayStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="TodayRoot" component={TodayScreen} />
-    <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
-  </Stack.Navigator>
+  <TodayStackNav.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    <TodayStackNav.Screen name="TodayRoot" component={TodayScreen} />
+    <TodayStackNav.Screen 
+      name="HabitDetail" 
+      component={HabitDetailScreen} 
+      options={{ gestureEnabled: true }}
+    />
+  </TodayStackNav.Navigator>
 );
 
 const TherapyStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="AgoraphobiaHome" component={AgoraphobiaHomeScreen} />
-    <Stack.Screen name="TherapyRoot" component={TherapyScreen} />
-    <Stack.Screen name="FearProfileOnboarding" component={FearProfileOnboardingScreen} />
-    <Stack.Screen name="ExposureLadder" component={ExposureLadderScreen} />
-    <Stack.Screen name="ActiveSession" component={ActiveSessionScreen} />
-    <Stack.Screen name="SessionReview" component={SessionReviewScreen} />
-    <Stack.Screen name="ThoughtRecord" component={ThoughtRecordScreen} />
-    <Stack.Screen name="AgoraphobiaStats" component={AgoraphobiaStatsScreen} />
-    <Stack.Screen name="CustomGoalSetup" component={CustomGoalSetupScreen} />
-    <Stack.Screen name="CustomGoalReview" component={CustomGoalReviewScreen} />
-    <Stack.Screen name="FearProfile" component={FearProfileScreen} />
-  </Stack.Navigator>
+  <TherapyStackNav.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    <TherapyStackNav.Screen name="AgoraphobiaHome" component={AgoraphobiaHomeScreen} />
+    <TherapyStackNav.Screen name="TherapyRoot" component={TherapyScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="FearProfileOnboarding" component={FearProfileOnboardingScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="ExposureLadder" component={ExposureLadderScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="ActiveSession" component={ActiveSessionScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="SessionReview" component={SessionReviewScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="ThoughtRecord" component={ThoughtRecordScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="AgoraphobiaStats" component={AgoraphobiaStatsScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="CustomGoalSetup" component={CustomGoalSetupScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="CustomGoalReview" component={CustomGoalReviewScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="FearProfile" component={FearProfileScreen} options={{ gestureEnabled: true }} />
+  </TherapyStackNav.Navigator>
 );
 
 const SettingsStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="SettingsRoot" component={SettingsScreen} />
-    <Stack.Screen name="HabitManager" component={HabitManagerScreen} />
-    <Stack.Screen name="HabitDetail" component={HabitDetailScreen} />
-    <Stack.Screen name="FearProfile" component={FearProfileScreen} />
-  </Stack.Navigator>
+  <SettingsStackNav.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    <SettingsStackNav.Screen name="SettingsRoot" component={SettingsScreen} />
+    <SettingsStackNav.Screen name="HabitManager" component={HabitManagerScreen} options={{ gestureEnabled: true }} />
+    <SettingsStackNav.Screen name="HabitDetail" component={HabitDetailScreen} options={{ gestureEnabled: true }} />
+    <SettingsStackNav.Screen name="FearProfile" component={FearProfileScreen} options={{ gestureEnabled: true }} />
+  </SettingsStackNav.Navigator>
 );
 
 const TechniquesStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="TechniquesHome" component={TechniquesHomeScreen} />
-    <Stack.Screen name="CalmSession" component={CalmSessionScreen} />
-    <Stack.Screen name="GroundingSession" component={GroundingScreen} />
-  </Stack.Navigator>
+  <TechniquesStackNav.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    <TechniquesStackNav.Screen name="TechniquesHome" component={TechniquesHomeScreen} />
+    <TechniquesStackNav.Screen name="CalmSession" component={CalmSessionScreen} options={{ gestureEnabled: true }} />
+    <TechniquesStackNav.Screen name="GroundingSession" component={GroundingScreen} options={{ gestureEnabled: true }} />
+  </TechniquesStackNav.Navigator>
 );
 
 export const RootNavigator = () => {

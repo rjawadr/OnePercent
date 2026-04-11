@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, BorderRadius, Shadows } from '../../theme';
 import { format } from 'date-fns';
@@ -53,12 +53,12 @@ export function TodayHeader({ completedCount, totalCount, onPressStats, onPressA
         </View>
 
         <View style={styles.actionCluster}>
-          <TouchableOpacity 
+          <Pressable 
             onPress={onPressStats}
-            activeOpacity={0.8}
-            style={[
+            style={({ pressed }) => [
               styles.statPill,
-              allDone && styles.statPillDone
+              allDone && styles.statPillDone,
+              pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }
             ]}
           >
             <View style={styles.iconCircle}>
@@ -76,15 +76,17 @@ export function TodayHeader({ completedCount, totalCount, onPressStats, onPressA
                  {Math.round(progressPercent)}%
                </Text>
             </View>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity 
+          <Pressable 
             onPress={onPressAdd}
-            activeOpacity={0.7}
-            style={styles.headerAddBtn}
+            style={({ pressed }) => [
+              styles.headerAddBtn,
+              pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }
+            ]}
           >
             <Icon name="plus" size={24} color={Colors.surface} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 

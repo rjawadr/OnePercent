@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { ScrollView, Pressable, View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { format, isSameDay } from 'date-fns';
 import { Colors, Typography, Spacing } from '../../theme';
@@ -64,11 +64,13 @@ export function DateScrollRow({ days, selectedDate, onSelectDate }: DateScrollRo
           const isSelected = isSameDay(day.date, selectedDate);
 
           return (
-            <TouchableOpacity
+            <Pressable
               key={day.date.toISOString()}
               onPress={() => onSelectDate(day.date)}
-              style={styles.dayWrapper}
-              activeOpacity={0.7}
+              style={({ pressed }) => [
+                styles.dayWrapper,
+                pressed && { opacity: 0.8, transform: [{ scale: 0.95 }] }
+              ]}
             >
               <View style={styles.ringWrapper}>
                 <ProgressRing
@@ -90,7 +92,7 @@ export function DateScrollRow({ days, selectedDate, onSelectDate }: DateScrollRo
               <Text style={[styles.dayLabel, isSelected && styles.dayLabelSelected]}>
                 {format(day.date, 'EEE').toUpperCase()}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </ScrollView>

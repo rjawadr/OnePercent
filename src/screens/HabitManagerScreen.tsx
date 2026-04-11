@@ -180,7 +180,11 @@ export const HabitManagerScreen = () => {
         <View style={styles.rowMain}>
           <View style={[styles.iconContainer, { backgroundColor: (item.color || Colors.brand) + '12' }]}>
             <View style={[styles.iconOverlay, { borderColor: (item.color || Colors.brand) + '25' }]} />
-            <Icon name={item.icon || 'sparkles'} size={28} color={item.color || Colors.brand} />
+            {/^[a-zA-Z0-9-]+$/.test(item.icon || 'sparkles') ? (
+              <Icon name={item.icon || 'sparkles'} size={28} color={item.color || Colors.brand} />
+            ) : (
+              <Text style={{ fontSize: 24 }}>{item.icon}</Text>
+            )}
           </View>
           
           <View style={styles.habitInfo}>

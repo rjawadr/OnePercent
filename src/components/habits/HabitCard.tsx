@@ -3,8 +3,9 @@ import {
   View, Text, TouchableOpacity, StyleSheet, Platform,
 } from 'react-native';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withTiming, withSequence,
+  useSharedValue, useAnimatedStyle, withTiming, withSequence, interpolate, runOnJS
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../theme';
 import { Habit } from '../../models/Habit';
@@ -44,83 +45,103 @@ export function HabitCard({
   onLog,
   onLongPress 
 }: HabitCardProps) {
-  const scale = useSharedValue(1);
+  const scale = useSharedValue(0);
+  const quickTrackScale = useSharedValue(0);
   const categoryKey = habit.category?.toLowerCase() as keyof typeof CATEGORY_COLORS;
   const categoryColor = CATEGORY_COLORS[categoryKey] ?? Colors.brand;
   const isMilestone = [3, 7, 14, 30, 60, 90, 180, 365].includes(currentStreak);
 
+  const tap = Gesture.Tap()
+    .onBegin(() => {
+      scale.set(withTiming(1, { duration: 100 }));
+    })
+    .onFinalize(() => {
+      scale.set(withTiming(0, { duration: 150 }));
+    })
+    .onEnd(() => {
+      runOnJS(onPress)();
+    });
+
+  const longPress = Gesture.LongPress()
+    .onStart(() => {
+      if (onLongPress) runOnJS(onLongPress)();
+    });
+
+  // Combine gestures
+  const cardGesture = Gesture.Exclusive(longPress, tap);
+
+  const quickTrackTap = Gesture.Tap()
+    .onBegin(() => {
+      quickTrackScale.set(withTiming(1, { duration: 100 }));
+    })
+    .onFinalize(() => {
+      quickTrackScale.set(withTiming(0, { duration: 150 }));
+    })
+    .onEnd(() => {
+      runOnJS(onLog)();
+    });
+
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: interpolate(scale.get(), [0, 1], [1, 0.97]) }],
   }));
 
-  const handlePress = () => {
-    scale.value = withSequence(
-      withTiming(0.97, { duration: 100 }),
-      withTiming(1, { duration: 100 })
-    );
-    onPress();
-  };
-
-  const handleLogPress = (e: any) => {
-    e.stopPropagation();
-    onLog();
-  };
+  const quickTrackAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(quickTrackScale.get(), [0, 1], [1, 0.9]) }],
+  }));
 
   const formatValue = (val: number, unit: string) => {
     return engineFormatValue(val, unit);
   };
 
   return (
-    <Animated.View style={[styles.card, animatedStyle]}>
-      <TouchableOpacity
-        onPress={handlePress}
-        onLongPress={onLongPress}
-        activeOpacity={1}
-        style={styles.touchable}
-      >
-        <View style={styles.topSection}>
-          <View style={[styles.iconStage, { backgroundColor: (habit.color || Colors.brand) + '15' }]}>
-             <Icon name={habit.icon || 'fire'} size={28} color={habit.color || Colors.brand} />
-          </View>
+    <GestureDetector gesture={cardGesture}>
+      <Animated.View style={[styles.card, animatedStyle]}>
+        <View style={styles.touchable}>
+          <View style={styles.topSection}>
+            <View style={[styles.iconStage, { backgroundColor: (habit.color || Colors.brand) + '15' }]}>
+               {/^[a-zA-Z0-9-]+$/.test(habit.icon || 'fire') ? (
+                 <Icon name={habit.icon || 'fire'} size={28} color={habit.color || Colors.brand} />
+               ) : (
+                 <Text style={{ fontSize: 24 }}>{habit.icon}</Text>
+               )}
+            </View>
 
-          <View style={styles.mainInfo}>
-            <View style={styles.titleRow}>
-              <View style={styles.titleAndStreak}>
-                <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
-                <View style={[styles.streakBadge, isMilestone && styles.streakMilestone]}>
-                  <Icon
-                    name={isMilestone ? 'trophy' : 'fire'}
-                    size={11}
-                    color={isMilestone ? Colors.gold : Colors.amber}
-                  />
-                  <Text style={[styles.streakText, isMilestone && styles.streakTextMilestone]}>
-                    {currentStreak}
-                  </Text>
+            <View style={styles.mainInfo}>
+              <View style={styles.titleRow}>
+                <View style={styles.titleAndStreak}>
+                  <Text style={styles.habitName} numberOfLines={1}>{habit.name}</Text>
+                  <View style={[styles.streakBadge, isMilestone && styles.streakMilestone]}>
+                    <Icon
+                      name={isMilestone ? 'trophy' : 'fire'}
+                      size={11}
+                      color={isMilestone ? Colors.gold : Colors.amber}
+                    />
+                    <Text style={[styles.streakText, isMilestone && styles.streakTextMilestone]}>
+                      {currentStreak}
+                    </Text>
+                  </View>
                 </View>
-              </View>
 
-              {!completedToday && (
-                <TouchableOpacity
-                  onPress={handleLogPress}
-                  style={styles.quickTrackBtn}
-                  activeOpacity={0.7}
-                >
-                  <Icon name="plus" size={22} color={Colors.surface} />
-                </TouchableOpacity>
-              )}
-            </View>
-            
-            <View style={styles.metaRow}>
-               <View style={[styles.typeBadge, { backgroundColor: categoryColor + '12' }]}>
-                  <Text style={[styles.typeText, { color: categoryColor }]}>{habit.category || 'Focus'}</Text>
-               </View>
-               <View style={styles.dot} />
-               <Text style={styles.targetStatus}>
-                 TARGET: {formatValue(habit.current_target, habit.unit || '')}
-               </Text>
+                {!completedToday && (
+                  <GestureDetector gesture={quickTrackTap}>
+                    <Animated.View style={[styles.quickTrackBtn, quickTrackAnimatedStyle]}>
+                      <Icon name="plus" size={22} color={Colors.surface} />
+                    </Animated.View>
+                  </GestureDetector>
+                )}
+              </View>
+              
+              <View style={styles.metaRow}>
+                 <View style={[styles.typeBadge, { backgroundColor: categoryColor + '12' }]}>
+                    <Text style={[styles.typeText, { color: categoryColor }]}>{habit.category || 'Focus'}</Text>
+                 </View>
+                 <View style={styles.dot} />
+                 <Text style={styles.targetStatus}>
+                   TARGET: {formatValue(habit.current_target, habit.unit || '')}
+                 </Text>
+              </View>
             </View>
           </View>
-        </View>
 
         <View style={styles.footer}>
           <View style={styles.progressSection}>
@@ -190,8 +211,9 @@ export function HabitCard({
             pointerEvents="none" 
           />
         )}
-      </TouchableOpacity>
-    </Animated.View>
+        </View>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 

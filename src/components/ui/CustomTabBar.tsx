@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, Dimensions } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, Dimensions } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -84,18 +84,17 @@ export const CustomTabBar = ({ state, descriptors, navigation }: BottomTabBarPro
           }
 
           return (
-            <TouchableOpacity
+            <Pressable
               key={route.key}
               onPress={onPress}
               style={styles.tabItem}
-              activeOpacity={0.7}
             >
               <AnimatedIcon
                 isFocused={isFocused}
                 name={iconName}
                 color={isFocused ? Colors.brand : Colors.textTertiary}
               />
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </View>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { ImprovementFrequency } from '../../engine/onePercentEngine';
 import { ProjectionCard } from './ProjectionCard';
 import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
@@ -18,11 +18,12 @@ interface CreateHabitStep2Props {
 }
 
 const FREQUENCY_OPTIONS: { value: ImprovementFrequency; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'none', label: 'None' },
+  { value: 'daily',   label: 'Improve 1% daily' },
+  { value: 'weekly',  label: 'Improve 1% weekly' },
+  { value: 'monthly', label: 'Improve 1% monthly' },
+  { value: 'none',    label: "Don't improve by 1%" },
 ];
+
 
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -97,16 +98,19 @@ export const CreateHabitStep2 = ({
         </View>
         <View style={styles.chipRow}>
           {FREQUENCY_OPTIONS.map(opt => (
-            <TouchableOpacity
+            <Pressable
               key={opt.value}
-              style={[styles.chip, frequency === opt.value && styles.chipActive]}
+              style={({ pressed }) => [
+                styles.chip, 
+                frequency === opt.value && styles.chipActive,
+                pressed && { transform: [{ scale: 0.96 }], opacity: 0.9 }
+              ]}
               onPress={() => setFrequency(opt.value)}
-              activeOpacity={0.7}
             >
               <Text style={[styles.chipText, frequency === opt.value && styles.chipTextActive]}>
                 {opt.label}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
       </View>

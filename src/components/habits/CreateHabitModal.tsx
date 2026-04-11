@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Modal,
   TextInput,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   TouchableWithoutFeedback,
@@ -56,6 +55,8 @@ function StepIndicator({ currentStep, totalSteps }: { currentStep: number; total
   );
 }
 
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, onClose, onAdd, onUpdate, initialHabit }) => {
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(1);
@@ -63,6 +64,7 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
 
   // Step 1 State
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState('✨');
   const [category, setCategory] = useState('Personal');
   const [unitType, setUnitType] = useState<HabitType>('quantity');
 
@@ -84,6 +86,7 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
   React.useEffect(() => {
     if (initialHabit && isVisible) {
       setName(initialHabit.name);
+      setIcon(initialHabit.icon || '✨');
       setCategory(initialHabit.category || 'Personal');
       setUnitType(initialHabit.unit_type || 'quantity');
       setBaseline(initialHabit.baseline_value.toString());
@@ -103,6 +106,7 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
   const reset = () => {
     setStep(1);
     setName('');
+    setIcon('✨');
     setCategory('Personal');
     setUnitType('quantity');
     setBaseline('');
@@ -138,6 +142,7 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
     if (isEdit && initialHabit && onUpdate) {
       const updates: Partial<Habit> = {
         name,
+        icon,
         category,
         unit,
         unit_type: unitType,
@@ -174,14 +179,14 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
         start_date: new Date().toISOString().split('T')[0],
         is_active: true,
         created_at: new Date().toISOString(),
-        icon: 'sparkles',
+        icon: icon,
         color: Colors.brand + '20',
         streak: 0,
         status: 'active',
       };
       onAdd(newHabit);
     }
-    
+
     reset();
     onClose();
   };
@@ -192,20 +197,36 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
         <Text style={styles.sectionTitle}>Define your new self</Text>
         <Text style={styles.sectionSubtitle}>Tiny habits, massive changes.</Text>
       </View>
-      
+
       <View style={styles.inputGroup}>
         <View style={styles.labelRow}>
           <Icon name="pencil-outline" size={18} color={Colors.brand} />
-          <Text style={styles.label}>What is your new habit?</Text>
+          <Text style={styles.label}>What is your new habit & icon?</Text>
         </View>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="e.g. Read Philosophy"
-          placeholderTextColor={Colors.textTertiary}
-          selectionColor={Colors.brand}
-        />
+        <View style={styles.nameRow}>
+          <TextInput
+            style={[styles.input, styles.iconInput]}
+            value={icon}
+            onChangeText={setIcon}
+            maxLength={6}
+            selectionColor={Colors.brand}
+            placeholder="✨"
+            textAlign="center"
+          />
+          <TextInput
+            style={[styles.input, styles.nameInput]}
+            value={name}
+            onChangeText={setName}
+            onKeyPress={({ nativeEvent }) => {
+              if (nativeEvent.key === 'Backspace' && name === '') {
+                setIcon('');
+              }
+            }}
+            placeholder="e.g. Read Philosophy"
+            placeholderTextColor={Colors.textTertiary}
+            selectionColor={Colors.brand}
+          />
+        </View>
       </View>
 
       <View style={styles.inputGroup}>
@@ -215,14 +236,17 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
         </View>
         <View style={styles.chipRow}>
           {CATEGORIES.map(cat => (
-            <TouchableOpacity
+            <Pressable
               key={cat}
-              style={[styles.chip, category === cat && styles.chipActive]}
+              style={({ pressed }) => [
+                styles.chip,
+                category === cat && styles.chipActive,
+                pressed && { transform: [{ scale: 0.96 }], opacity: 0.9 }
+              ]}
               onPress={() => setCategory(cat)}
-              activeOpacity={0.7}
             >
               <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>{cat}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
       </View>
@@ -234,19 +258,22 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
         </View>
         <View style={styles.chipRow}>
           {TYPES.map(t => (
-            <TouchableOpacity
+            <Pressable
               key={t.value}
-              style={[styles.chip, unitType === t.value && styles.chipActive]}
+              style={({ pressed }) => [
+                styles.chip,
+                unitType === t.value && styles.chipActive,
+                pressed && { transform: [{ scale: 0.96 }], opacity: 0.9 }
+              ]}
               onPress={() => {
                 setUnitType(t.value);
                 if (t.value === 'check') setUnit('Done');
                 if (t.value === 'time') setUnit('Mins');
               }}
-              activeOpacity={0.7}
             >
               <Icon name={t.icon} size={18} color={unitType === t.value ? Colors.brand : Colors.textSecondary} />
               <Text style={[styles.chipText, unitType === t.value && styles.chipTextActive]}>{t.label}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
       </View>
@@ -299,19 +326,22 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
           <Text style={styles.label}>Active Cycles</Text>
         </View>
         <View style={styles.daysRow}>
-          {['M','T','W','T','F','S','S'].map((day, i) => (
-            <TouchableOpacity
+          {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+            <Pressable
               key={`${day}-${i}`}
-              style={[styles.dayCircle, activeDays[i] === '1' && styles.dayCircleActive]}
+              style={({ pressed }) => [
+                styles.dayCircle,
+                activeDays[i] === '1' && styles.dayCircleActive,
+                pressed && { transform: [{ scale: 0.92 }], opacity: 0.8 }
+              ]}
               onPress={() => {
                 const newDays = activeDays.split('');
                 newDays[i] = newDays[i] === '1' ? '0' : '1';
                 setActiveDays(newDays.join(''));
               }}
-              activeOpacity={0.7}
             >
               <Text style={[styles.dayText, activeDays[i] === '1' && styles.dayTextActive]}>{day}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
       </View>
@@ -326,85 +356,93 @@ export const CreateHabitModal: React.FC<CreateHabitModalProps> = ({ isVisible, o
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
-        <BlurView 
-          style={StyleSheet.absoluteFill}
-          blurType="dark"
-          blurAmount={10}
-          reducedTransparencyFallbackColor="rgba(0,0,0,0.5)"
-        />
-        <Pressable style={styles.backdrop} onPress={onClose} />
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={styles.overlay}>
+          <BlurView
+            style={StyleSheet.absoluteFill}
+            blurType="dark"
+            blurAmount={10}
+            reducedTransparencyFallbackColor="rgba(0,0,0,0.5)"
+          />
+          <Pressable style={styles.backdrop} onPress={onClose} />
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.keyboardView}
-        >
-          <Animated.View 
-            entering={FadeInUp.duration(400)}
-            layout={Layout.duration(300)}
-            style={[styles.modalContent, { marginBottom: TAB_BAR_OFFSET }]}
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.keyboardView}
           >
-            <View style={styles.grabHandle} />
-
-            <View style={styles.header}>
-              <View style={styles.headerLeft}>
-                <Text style={styles.title}>{isEdit ? 'Refine Habit' : 'New Habit'}</Text>
-                <StepIndicator currentStep={step - 1} totalSteps={3} />
-              </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.8}>
-                <Icon name="close" size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.scrollContent}
-              bounces={false}
-              overScrollMode="never"
+            <Animated.View
+              entering={FadeInUp.duration(400)}
+              layout={Layout.duration(300)}
+              style={[styles.modalContent, { marginBottom: TAB_BAR_OFFSET }]}
             >
-              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View>
-                  {step === 1 && renderStep1()}
-                  {step === 2 && (
-                    <CreateHabitStep2
-                      baseline={baseline}
-                      setBaseline={setBaseline}
-                      unit={unit}
-                      setUnit={setUnit}
-                      goal={goal}
-                      setGoal={setGoal}
-                      frequency={freq}
-                      setFrequency={setFreq}
-                      identity={identity}
-                      setIdentity={setIdentity}
-                    />
-                  )}
-                  {step === 3 && renderStep3()}
-                </View>
-              </TouchableWithoutFeedback>
-            </ScrollView>
+              <View style={styles.grabHandle} />
 
-            <View style={styles.footer}>
-              {step > 1 && (
+              <View style={styles.header}>
+                <View style={styles.headerLeft}>
+                  <Text style={styles.title}>{isEdit ? 'Refine Habit' : 'New Habit'}</Text>
+                  <StepIndicator currentStep={step - 1} totalSteps={3} />
+                </View>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.closeBtn,
+                    pressed && { transform: [{ scale: 0.9 }], opacity: 0.7 }
+                  ]}
+                  onPress={onClose}
+                >
+                  <Icon name="close" size={20} color={Colors.textSecondary} />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.scrollContent}
+                bounces={false}
+                overScrollMode="never"
+              >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                  <View>
+                    {step === 1 && renderStep1()}
+                    {step === 2 && (
+                      <CreateHabitStep2
+                        baseline={baseline}
+                        setBaseline={setBaseline}
+                        unit={unit}
+                        setUnit={setUnit}
+                        goal={goal}
+                        setGoal={setGoal}
+                        frequency={freq}
+                        setFrequency={setFreq}
+                        identity={identity}
+                        setIdentity={setIdentity}
+                      />
+                    )}
+                    {step === 3 && renderStep3()}
+                  </View>
+                </TouchableWithoutFeedback>
+              </ScrollView>
+
+              <View style={styles.footer}>
+                {step > 1 && (
+                  <Button
+                    title="Back"
+                    type="secondary"
+                    onPress={handleBack}
+                    style={[styles.footerBtn, styles.backBtn]}
+                  />
+                )}
                 <Button
-                  title="Back"
-                  type="secondary"
-                  onPress={handleBack}
-                  style={[styles.footerBtn, styles.backBtn]}
+                  title={step === 3 ? (isEdit ? 'Update' : 'Launch') : 'Continue'}
+                  type="primary"
+                  onPress={handleNext}
+                  style={styles.footerBtn}
+                  disabled={(step === 1 && !name) || (step === 2 && (!unit || !baseline))}
                 />
-              )}
-              <Button
-                title={step === 3 ? (isEdit ? 'Update' : 'Launch') : 'Continue'}
-                type="primary"
-                onPress={handleNext}
-                style={styles.footerBtn}
-                disabled={(step === 1 && !name) || (step === 2 && (!unit || !baseline))}
-              />
-            </View>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      </View>
+              </View>
+            </Animated.View>
+          </KeyboardAvoidingView>
+        </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 };
@@ -546,6 +584,18 @@ const styles = StyleSheet.create({
     minHeight: 64,
     borderWidth: 1.5,
     borderColor: 'transparent',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconInput: {
+    flex: 0.25,
+    paddingHorizontal: 0,
+    fontSize: 24,
+  },
+  nameInput: {
+    flex: 0.75,
   },
   inputWithIcon: {
     flexDirection: 'row',
