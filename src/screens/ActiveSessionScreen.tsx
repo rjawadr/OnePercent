@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert,
+  View, Text, StyleSheet, ScrollView, Pressable, TextInput,
   KeyboardAvoidingView, Platform, Linking,
 } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -19,6 +19,7 @@ import {
   generateSessionCoachingNudge,
 } from '../engine/agoraphobiaEngine';
 import { Colors, Typography, Spacing } from '../theme';
+import { useUIStore } from '../store/uiStore';
 import { ExposureSession, SUDSEntry } from '../models/ExposureSession';
 
 type Phase = 'pre' | 'active' | 'post';
@@ -49,11 +50,11 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
 
   const handleCrisisPress = useCallback(() => {
     if (!fearProfile?.crisis_helpline_number && !fearProfile?.emergency_contact_number) {
-      Alert.alert(
-        'Support Contacts',
-        'Set up your emergency contacts in Settings → Fear Profile.',
-        [{ text: 'OK', style: 'default' }]
-      );
+      useUIStore.getState().showAlert({
+        title: 'Support Contacts',
+        message: 'Set up your emergency contacts in Settings → Fear Profile.',
+        type: 'info'
+      });
       return;
     }
 
@@ -72,11 +73,12 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
     }
     buttons.push({ text: "I'm safe, close", style: 'cancel' });
 
-    Alert.alert(
-      'Need Support?',
-      'Your wellbeing matters. Choose an option below.',
-      buttons
-    );
+    useUIStore.getState().showAlert({
+      title: 'Need Support?',
+      message: 'Your wellbeing matters. Choose an option below.',
+      buttons: buttons,
+      type: 'warning'
+    });
   }, [fearProfile]);
 
   const handleStart = async () => {
@@ -129,10 +131,10 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
   };
 
   const handleAbort = () => {
-    Alert.alert(
-      'End Early?',
-      'Missing once is an accident. Missing twice is a pattern. You can always try again.',
-      [
+    useUIStore.getState().showAlert({
+      title: 'End Early?',
+      message: 'Missing once is an accident. Missing twice is a pattern. You can always try again.',
+      buttons: [
         { text: 'Keep Going', style: 'cancel' },
         {
           text: 'End Session',
@@ -141,8 +143,9 @@ export const ActiveSessionScreen = ({ navigation, route }: any) => {
             navigation.goBack();
           },
         },
-      ]
-    );
+      ],
+      type: 'warning'
+    });
   };
 
   if (!step) {

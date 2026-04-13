@@ -25,6 +25,7 @@ import {
   CalmSessionScreen,
   GroundingScreen,
   FearProfileScreen,
+  FearEducationScreen,
 } from '../screens';
 import { CustomTabBar } from '../components/ui/CustomTabBar';
 import { Colors } from '../theme';
@@ -60,6 +61,7 @@ const TherapyStack = () => (
     <TherapyStackNav.Screen name="CustomGoalSetup" component={CustomGoalSetupScreen} options={{ gestureEnabled: true }} />
     <TherapyStackNav.Screen name="CustomGoalReview" component={CustomGoalReviewScreen} options={{ gestureEnabled: true }} />
     <TherapyStackNav.Screen name="FearProfile" component={FearProfileScreen} options={{ gestureEnabled: true }} />
+    <TherapyStackNav.Screen name="FearEducation" component={FearEducationScreen} options={{ gestureEnabled: true }} />
   </TherapyStackNav.Navigator>
 );
 

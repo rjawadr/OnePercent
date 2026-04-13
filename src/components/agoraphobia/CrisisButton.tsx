@@ -1,31 +1,31 @@
 import React from 'react';
-import { Alert, Linking, StyleSheet, Pressable, Text, View } from 'react-native';
+import { Linking, StyleSheet, Pressable, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import { Colors, Spacing, Typography } from '../../theme';
+import { useUIStore } from '../../store/uiStore';
 
 interface CrisisButtonProps {
-  crisisNumber?: string;
-  emergencyName?: string;
-  emergencyNumber?: string;
-  pulsing?: boolean;
+  crisisNumber?: string | null;
+  crisisName?: string | null;
+  emergencyNumber?: string | null;
+  emergencyName?: string | null;
 }
 
-export const CrisisButton = ({
+export const CrisisButton: React.FC<CrisisButtonProps> = ({
   crisisNumber,
-  emergencyName,
+  crisisName,
   emergencyNumber,
-  pulsing = false,
-}: CrisisButtonProps) => {
+  emergencyName,
+}) => {
   const pulseStyle = useAnimatedStyle(() => {
-    if (!pulsing) return { transform: [{ scale: 1 }] };
     return {
       transform: [
         {
           scale: withRepeat(
             withSequence(
-              withTiming(1.1, { duration: 600 }),
-              withTiming(1.0, { duration: 600 })
+              withTiming(1, { duration: 0 }),
+              withTiming(1.08, { duration: 1500 })
             ),
             -1,
             true
@@ -36,12 +36,14 @@ export const CrisisButton = ({
   });
 
   const handlePress = () => {
+    const showAlert = useUIStore.getState().showAlert;
+
     if (!crisisNumber && !emergencyNumber) {
-      Alert.alert(
-        'Support Contacts',
-        'Set up your emergency contacts in Settings → Fear Profile.',
-        [{ text: 'OK', style: 'default' }]
-      );
+      showAlert({
+        title: 'Support Contacts',
+        message: 'Set up your emergency contacts in Settings → Fear Profile.',
+        type: 'warning'
+      });
       return;
     }
 
@@ -61,11 +63,12 @@ export const CrisisButton = ({
     }
     buttons.push({ text: "I'm safe, close", style: 'cancel' });
 
-    Alert.alert(
-      'Need Support?',
-      'Your wellbeing matters. Choose an option below.',
-      buttons
-    );
+    showAlert({
+      title: 'Need Support?',
+      message: 'Your wellbeing matters. Choose an option below.',
+      buttons,
+      type: 'info'
+    });
   };
 
   return (

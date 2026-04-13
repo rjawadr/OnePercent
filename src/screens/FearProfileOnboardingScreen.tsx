@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert,
+  View, Text, StyleSheet, ScrollView, Pressable, TextInput,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import Animated, { FadeInRight, FadeInLeft } from 'react-native-reanimated';
@@ -9,6 +9,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { FearProfileChip, AddChipButton } from '../components/agoraphobia/FearProfileChip';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
+import { useUIStore } from '../store/uiStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing } from '../theme';
 
@@ -79,7 +80,11 @@ export const FearProfileOnboardingScreen = ({ navigation }: any) => {
       });
       navigation.replace('ExposureLadder');
     } catch (e) {
-      Alert.alert('Error', 'Failed to save. Please try again.');
+      useUIStore.getState().showAlert({
+        title: 'Error',
+        message: 'Failed to save. Please try again.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -110,7 +115,11 @@ export const FearProfileOnboardingScreen = ({ navigation }: any) => {
                 />
               ))}
               <AddChipButton onPress={() => {
-                Alert.alert('Add custom trigger', 'You can type custom triggers when you reach the "Feared Attacks" step, or edit your fear profile later in Settings.');
+                useUIStore.getState().showAlert({
+                  title: 'Add custom trigger', 
+                  message: 'You can type custom triggers when you reach the "Feared Attacks" step, or edit your fear profile later in Settings.',
+                  type: 'info'
+                });
               }} />
             </View>
           </Animated.View>
@@ -138,7 +147,11 @@ export const FearProfileOnboardingScreen = ({ navigation }: any) => {
                 />
               ))}
               <AddChipButton onPress={() => {
-                Alert.alert('Custom sensation', 'Please use the chips above or add custom items in Settings');
+                useUIStore.getState().showAlert({
+                  title: 'Custom sensation', 
+                  message: 'Please use the chips above or add custom items in Settings',
+                  type: 'info'
+                });
               }} />
             </View>
           </Animated.View>

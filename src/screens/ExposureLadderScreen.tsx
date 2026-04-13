@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, Alert, Animated as RNAnimated, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated as RNAnimated, Modal, FlatList } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -7,6 +7,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { ExposureStepCard } from '../components/agoraphobia/ExposureStepCard';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
+import { useUIStore } from '../store/uiStore';
 import { generateId } from '../engine/agoraphobiaEngine';
 import { EXPOSURE_TEMPLATES, ExposureTemplate } from '../data/exposureTemplates';
 import { Colors, Typography, Spacing, Shadows } from '../theme';
@@ -89,10 +90,10 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
       return;
     }
 
-    Alert.alert(
-      template.goal,
-      `This will add ${template.steps.length} steps to your ladder. Continue?`,
-      [
+    useUIStore.getState().showAlert({
+      title: template.goal,
+      message: `This will add ${template.steps.length} steps to your ladder. Continue?`,
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Add Steps',
@@ -124,24 +125,26 @@ export const ExposureLadderScreen = ({ navigation, route }: any) => {
             setShowTemplates(false);
           },
         },
-      ]
-    );
+      ],
+      type: 'info'
+    });
   };
 
   const [resetTargetStep, setResetTargetStep] = useState<ExposureStep | null>(null);
 
   const handleStepOptions = useCallback((step: ExposureStep) => {
-    Alert.alert(
-      'Step Options',
-      `Manage "${step.name}"`,
-      [
+    useUIStore.getState().showAlert({
+      title: 'Step Options',
+      message: `Manage "${step.name}"`,
+      buttons: [
         {
           text: 'Reset Target',
           onPress: () => setResetTargetStep(step),
         },
         { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+      ],
+      type: 'info'
+    });
   }, []);
 
   const renderTemplateItem = useCallback(({ item: t, index }: { item: ExposureTemplate; index: number }) => (

@@ -10,6 +10,7 @@ import { Button } from '../components/ui/Button';
 import { FearProfileChip } from '../components/agoraphobia/FearProfileChip';
 import { AIInsightCard } from '../components/agoraphobia/AIInsightCard';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
+import { useUIStore } from '../store/uiStore';
 import { generateId, is7ColUnlocked } from '../engine/agoraphobiaEngine';
 import { getAIReframe } from '../services/AIReframingService';
 import { getQuickSaveTip, getMilestoneSummary, isMilestone } from '../services/AIProgressInsightsService';
@@ -90,7 +91,11 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
 
   const handleAIReframe = async () => {
     if (!autoThoughts.trim()) {
-      Alert.alert('Write your thoughts first', 'AI needs your automatic thoughts to suggest a reframe.');
+      useUIStore.getState().showAlert({
+        title: 'Write your thoughts first', 
+        message: 'AI needs your automatic thoughts to suggest a reframe.',
+        type: 'info'
+      });
       return;
     }
     setAiLoading(true);
@@ -101,7 +106,11 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
 
   const handleSave = async () => {
     if (!situation.trim() && !autoThoughts.trim()) {
-      Alert.alert('Add some content', 'Write at least a situation or your automatic thoughts.');
+      useUIStore.getState().showAlert({
+        title: 'Add some content', 
+        message: 'Write at least a situation or your automatic thoughts.',
+        type: 'warning'
+      });
       return;
     }
     setLoading(true);
@@ -163,7 +172,11 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
         setInsightVisible(true);
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to save.');
+      useUIStore.getState().showAlert({
+        title: 'Error', 
+        message: 'Failed to save.',
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -186,10 +199,10 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
             {isReviewMode && (
               <Pressable 
                 onPress={() => {
-                  Alert.alert(
-                    "Delete Record", 
-                    "Are you sure you want to delete this session from your history?",
-                    [
+                  useUIStore.getState().showAlert({
+                    title: "Delete Record", 
+                    message: "Are you sure you want to delete this session from your history?",
+                    buttons: [
                       { text: "Cancel", style: "cancel" },
                       { 
                         text: "Delete", 
@@ -199,8 +212,9 @@ export const ThoughtRecordScreen = ({ navigation, route }: any) => {
                           navigation.goBack();
                         }
                       }
-                    ]
-                  );
+                    ],
+                    type: 'warning'
+                  });
                 }} 
                 hitSlop={12}
                 style={styles.deleteBtn}

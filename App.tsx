@@ -1,14 +1,6 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { StatusBar, StyleSheet, useColorScheme, View, Text, TouchableOpacity } from 'react-native';
+import { StatusBar, useColorScheme, View, Text } from 'react-native';
 import {
   SafeAreaProvider,
-  useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -19,6 +11,7 @@ import { useHabitStore } from './src/store/habitStore';
 import { useAgoraphobiaStore } from './src/store/agoraphobiaStore';
 
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { CustomAlert } from './src/components/ui/CustomAlert';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -53,6 +46,7 @@ function App() {
       <SafeAreaProvider>
         <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <RootNavigator />
+        <CustomAlert />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

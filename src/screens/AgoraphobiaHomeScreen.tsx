@@ -9,6 +9,7 @@ import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
 import { projectExposureDifficulty } from '../engine/agoraphobiaEngine';
 import { getMilestoneSummary, MILESTONE_COUNTS } from '../services/AIProgressInsightsService';
 import { Colors, Typography, Spacing, Shadows } from '../theme';
+import { db } from '../db/client';
 
 export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
   const { fearProfile, steps, sessions, thoughtRecords, initialize, isInitialized } = useAgoraphobiaStore();
@@ -22,7 +23,15 @@ export const AgoraphobiaHomeScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     if (isInitialized && (!fearProfile || !fearProfile.onboarding_completed)) {
-      navigation.replace('FearProfileOnboarding');
+      // Check if user has seen education
+      db.executeAsync("SELECT value FROM kv_store WHERE key = 'agoraphobia_education_seen'")
+        .then(res => {
+          const seen = (res.rows as any)?._array?.[0]?.value === 'true';
+          navigation.replace(seen ? 'FearProfileOnboarding' : 'FearEducation');
+        })
+        .catch(() => {
+          navigation.replace('FearEducation');
+        });
     }
   }, [isInitialized, fearProfile]);
 

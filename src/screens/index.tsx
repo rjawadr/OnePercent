@@ -20,3 +20,4 @@ export * from './TechniquesHomeScreen';
 export * from './CalmSessionScreen';
 export * from './GroundingScreen';
 export * from './FearProfileScreen';
+export * from './FearEducationScreen';

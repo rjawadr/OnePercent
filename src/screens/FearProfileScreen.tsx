@@ -7,7 +7,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -17,6 +16,7 @@ import { Layout } from '../components/ui/Layout';
 import { Button } from '../components/ui/Button';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../theme';
 import { useAgoraphobiaStore } from '../store/agoraphobiaStore';
+import { useUIStore } from '../store/uiStore';
 
 export const FearProfileScreen = () => {
   const navigation = useNavigation();
@@ -46,11 +46,19 @@ export const FearProfileScreen = () => {
         crisis_helpline_name: helplineName,
         crisis_helpline_number: helplinePhone,
       });
-      Alert.alert('Success', 'Safety profile updated successfully.');
+      useUIStore.getState().showAlert({
+        title: 'Success',
+        message: 'Safety profile updated successfully.',
+        type: 'success'
+      });
       navigation.goBack();
     } catch (error) {
       console.error('Error saving fear profile:', error);
-      Alert.alert('Error', 'Failed to save changes.');
+      useUIStore.getState().showAlert({
+        title: 'Error',
+        message: 'Failed to save changes.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }

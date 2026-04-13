@@ -17,21 +17,16 @@ interface ResetTargetBottomSheetProps {
 
 const GlassBackground = ({ style, ...props }: any) => (
   <View style={[style, { overflow: 'hidden', borderRadius: 32 }]}>
-    <BlurView
-      style={StyleSheet.absoluteFill}
-      blurType="dark"
-      blurAmount={25}
-      reducedTransparencyFallbackColor="black"
-    />
-    <View 
+    <View
       style={[
-        StyleSheet.absoluteFill, 
-        { 
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        StyleSheet.absoluteFill,
+        {
+          backgroundColor: Colors.surface,
           borderWidth: 1.5,
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderColor: Colors.borderLight,
+          ...Shadows.elevated,
         }
-      ]} 
+      ]}
     />
   </View>
 );
@@ -65,16 +60,16 @@ export const ResetTargetBottomSheet = ({
               The "Plateau of Latent Potential" means you are making progress we just can't see yet. Resetting drops mastery to zero.
             </Text>
             <View style={styles.buttonGroup}>
-              <Button 
-                title="Trust the Process" 
-                onPress={onClose} 
-                style={styles.button} 
+              <Button
+                title="Trust the Process"
+                onPress={onClose}
+                style={styles.button}
               />
               <Button
                 title="Adjust Baseline"
                 type="secondary"
                 onPress={() => setStage(2)}
-                textStyle={{ color: 'rgba(255,255,255,0.6)' }}
+                textStyle={{ color: Colors.textSecondary }}
                 style={styles.ghostButton}
               />
             </View>
@@ -93,9 +88,9 @@ export const ResetTargetBottomSheet = ({
                 style={styles.stepperButton}
                 onPress={() => setNewTarget(Math.max(1, newTarget - 1))}
               >
-                <Icon name="minus" size={24} color="#fff" />
+                <Icon name="minus" size={24} color={Colors.textPrimary} />
               </Pressable>
-              
+
               <View style={styles.stepperValueContainer}>
                 <Text style={styles.newTargetText}>{newTarget}</Text>
                 <Text style={styles.unitText}>{unit}</Text>
@@ -105,7 +100,7 @@ export const ResetTargetBottomSheet = ({
                 style={styles.stepperButton}
                 onPress={() => setNewTarget(newTarget + 1)}
               >
-                <Icon name="plus" size={24} color="#fff" />
+                <Icon name="plus" size={24} color={Colors.textPrimary} />
               </Pressable>
             </View>
 
@@ -148,7 +143,7 @@ export const ResetTargetBottomSheet = ({
   return (
     <BottomSheet
       index={0}
-      snapPoints={['55%']}
+      snapPoints={['58%']}
       enablePanDownToClose
       onClose={onClose}
       backdropComponent={renderBackdrop}
@@ -167,7 +162,7 @@ export const ResetTargetBottomSheet = ({
 
 const styles = StyleSheet.create({
   indicator: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: Colors.border,
     width: 40,
     height: 4,
   },
@@ -182,24 +177,24 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.l,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.borderLight,
   },
   title: {
     ...Typography.heading,
     fontSize: 24,
-    color: '#fff',
+    color: Colors.textPrimary,
     marginBottom: Spacing.s,
     fontWeight: '900',
     textAlign: 'center',
   },
   description: {
     ...Typography.body,
-    color: 'rgba(255,255,255,0.6)',
+    color: Colors.textSecondary,
     marginBottom: Spacing.xl,
     textAlign: 'center',
     lineHeight: 22,
@@ -228,10 +223,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: Colors.background,
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.borderLight,
     padding: Spacing.m,
     marginBottom: Spacing.xxl,
   },
@@ -239,11 +234,11 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.borderLight,
   },
   stepperValueContainer: {
     alignItems: 'center',
@@ -251,12 +246,12 @@ const styles = StyleSheet.create({
   newTargetText: {
     ...Typography.heading,
     fontSize: 36,
-    color: '#fff',
+    color: Colors.textPrimary,
     fontWeight: '900',
   },
   unitText: {
     ...Typography.micro,
-    color: 'rgba(255,255,255,0.4)',
+    color: Colors.textTertiary,
     fontWeight: '800',
     textTransform: 'uppercase',
   },
